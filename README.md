@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RAGForge
 
-## Getting Started
+Build your own RAG (Retrieval-Augmented Generation) pipeline through a simple 3-step UI: **upload documents**, **configure settings**, and **chat with your data** — powered by Google Gemini.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Document Upload** — Drag & drop PDF, TXT, or DOCX files
+- **Configurable Pipeline** — Adjust chunk size, overlap, top-K retrieval, model selection, and system prompt
+- **Real-time Chat** — Streaming responses with source attribution chips
+- **In-memory Vector Store** — No database required; session-scoped vector storage with cosine similarity search
+- **Dark Industrial UI** — Custom design system with Syne + DM Mono typography, Framer Motion animations, and terminal-style progress indicators
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS + CSS custom properties |
+| LLM / Embeddings | Google Gemini (`@google/generative-ai`) |
+| Vector Store | In-memory (module-level Map, session-keyed) |
+| State Management | Zustand |
+| File Handling | pdf-parse, mammoth, react-dropzone |
+| Animations | Framer Motion |
+
+
+## How It Works
+
+```
+1. UPLOAD    →  Drop your documents (PDF / TXT / DOCX)
+2. CONFIGURE →  Enter your Gemini API key, pick a model,
+                tune chunk size, overlap, top-K, and system prompt
+3. CHAT      →  Ask questions — answers are streamed with source citations
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Author
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Ashutosh Swamy**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [GitHub](https://github.com/ashutoshswamy)
+- [LinkedIn](https://linkedin.com/in/ashutoshswamy)
+- [Twitter / X](https://twitter.com/ashutoshswamy_)
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is open source and available under the [MIT License](LICENSE).
