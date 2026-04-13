@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Logo from "@/components/ui/Logo";
 import { v4 as uuidv4 } from "uuid";
 import { usePipelineStore } from "@/store/pipeline";
 import Stepper from "@/components/stepper/Stepper";
@@ -47,13 +48,16 @@ export default function PipelinePage() {
       >
         <Link
           href="/"
-          className="text-lg font-bold tracking-tight no-underline"
+          className="flex items-center gap-2 text-lg font-bold tracking-tight no-underline group"
           style={{
             fontFamily: "var(--font-heading)",
             color: "var(--text)",
           }}
         >
-          RAG<span style={{ color: "var(--accent)" }}>Forge</span>
+          <Logo size="sm" className="transition-transform duration-300 group-hover:scale-110" />
+          <span>
+            RAG<span style={{ color: "var(--accent)" }}>Forge</span>
+          </span>
         </Link>
 
         <div

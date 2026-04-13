@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
+import Logo from "@/components/ui/Logo";
 
 const stagger: Variants = {
   hidden: {},
@@ -65,6 +66,11 @@ export default function Home() {
           >
             Retrieval-Augmented Generation
           </span>
+        </motion.div>
+
+        {/* Logo */}
+        <motion.div variants={fadeUp} className="mb-2">
+          <Logo size="lg" />
         </motion.div>
 
         {/* Title */}
