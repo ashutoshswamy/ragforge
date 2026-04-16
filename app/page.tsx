@@ -837,12 +837,29 @@ export default function Home() {
           </span>
         </div>
 
-        <span
-          className="text-[10px] uppercase tracking-widest"
-          style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
-        >
-          Built by Ashutosh Swamy
-        </span>
+        <div className="flex items-center gap-4">
+          <span
+            className="text-[10px] uppercase tracking-widest"
+            style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
+          >
+            Built by Ashutosh Swamy
+          </span>
+          <span style={{ color: "var(--border)" }}>|</span>
+          <Link
+            href="/privacy"
+            className="text-[10px] uppercase tracking-widest transition-colors duration-200 hover:opacity-80"
+            style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/terms"
+            className="text-[10px] uppercase tracking-widest transition-colors duration-200 hover:opacity-80"
+            style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
+          >
+            Terms
+          </Link>
+        </div>
 
         <div className="flex items-center gap-4">
           <a
