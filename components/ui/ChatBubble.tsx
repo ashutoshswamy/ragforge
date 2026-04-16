@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "@/types";
 import SourceChip from "./SourceChip";
 
@@ -43,11 +45,82 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
             borderLeft: isUser
               ? undefined
               : "2px solid var(--accent-dim)",
-            whiteSpace: "pre-wrap",
             wordBreak: "break-word",
           }}
         >
-          {message.content}
+          {isUser ? (
+            <span style={{ whiteSpace: "pre-wrap" }}>{message.content}</span>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0">{children}</p>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ color: "var(--accent)", fontWeight: 600 }}>
+                    {children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>
+                ),
+                li: ({ children }) => <li>{children}</li>,
+                h1: ({ children }) => (
+                  <h1 className="text-base font-bold mb-2" style={{ color: "var(--accent)" }}>
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-sm font-bold mb-2" style={{ color: "var(--accent)" }}>
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--accent-dim)" }}>
+                    {children}
+                  </h3>
+                ),
+                code: ({ children }) => (
+                  <code
+                    className="px-1 py-0.5 rounded text-xs"
+                    style={{
+                      background: "var(--surface-elevated)",
+                      border: "1px solid var(--border)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre
+                    className="p-3 rounded text-xs overflow-x-auto mb-2"
+                    style={{
+                      background: "var(--surface-elevated)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    {children}
+                  </pre>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote
+                    className="pl-3 italic my-2"
+                    style={{ borderLeft: "2px solid var(--accent-dim)", color: "var(--text-muted)" }}
+                  >
+                    {children}
+                  </blockquote>
+                ),
+                hr: () => <hr style={{ borderColor: "var(--border)" }} className="my-2" />,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
         </div>
 
         {/* Sources */}
