@@ -21,7 +21,7 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div
-        className={`max-w-[92%] sm:max-w-[80%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}
+        className={`max-w-[85%] sm:max-w-[80%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}
       >
         {/* Role label */}
         <span

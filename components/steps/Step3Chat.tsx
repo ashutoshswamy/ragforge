@@ -1,17 +1,57 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { usePipelineStore } from "@/store/pipeline";
 import ChatBubble from "@/components/ui/ChatBubble";
+import type { ChatMessage } from "@/types";
+
+async function saveMessages(pipelineId: string, messages: ChatMessage[]) {
+  try {
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pipelineId, messages }),
+    });
+  } catch {
+    // Silent fail — chat still works, just not persisted
+  }
+}
 
 export default function Step3Chat() {
-  const { messages, addMessage, config, sessionId, reset } =
+  const { messages, addMessage, config, pipelineId, reset } =
     usePipelineStore();
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Reset history flag when pipeline changes
+  useEffect(() => {
+    setHistoryLoaded(false);
+  }, [pipelineId]);
+
+  // Load chat history when opening an existing pipeline
+  useEffect(() => {
+    if (!pipelineId || historyLoaded) return;
+
+    const loadHistory = async () => {
+      try {
+        const res = await fetch(`/api/messages?pipelineId=${pipelineId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const history: ChatMessage[] = data.messages ?? [];
+        if (history.length > 0) {
+          usePipelineStore.setState({ messages: history });
+        }
+      } finally {
+        setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+  }, [pipelineId, historyLoaded]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -23,23 +63,22 @@ export default function Step3Chat() {
     inputRef.current?.focus();
   }, []);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     const question = input.trim();
     if (!question || isStreaming) return;
 
     setInput("");
-    addMessage({ role: "user", content: question });
+    const userMsg: ChatMessage = { role: "user", content: question };
+    addMessage(userMsg);
     setIsStreaming(true);
 
     try {
       const res = await fetch("/api/query", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.apiKey}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
+          pipelineId,
+          apiKey: config.apiKey,
           question,
           config: {
             model: config.model,
@@ -54,18 +93,18 @@ export default function Step3Chat() {
         throw new Error(data.error || "Query failed");
       }
 
-      // Check if response is JSON (no context found) or stream
       const contentType = res.headers.get("Content-Type") || "";
+      let assistantMsg: ChatMessage;
 
       if (contentType.includes("application/json")) {
         const data = await res.json();
-        addMessage({
+        assistantMsg = {
           role: "assistant",
           content: data.answer,
           sources: data.sources,
-        });
+        };
+        addMessage(assistantMsg);
       } else {
-        // Streaming response
         const sourcesHeader = res.headers.get("X-Sources");
         const sources: string[] = sourcesHeader
           ? JSON.parse(sourcesHeader)
@@ -76,7 +115,6 @@ export default function Step3Chat() {
         let fullText = "";
 
         if (reader) {
-          // Add placeholder message
           addMessage({ role: "assistant", content: "", sources });
 
           while (true) {
@@ -86,7 +124,6 @@ export default function Step3Chat() {
             const chunk = decoder.decode(value, { stream: true });
             fullText += chunk;
 
-            // Update the last message with accumulated text
             usePipelineStore.setState((state) => {
               const msgs = [...state.messages];
               const lastMsg = msgs[msgs.length - 1];
@@ -101,18 +138,26 @@ export default function Step3Chat() {
             });
           }
         }
+
+        assistantMsg = { role: "assistant", content: fullText, sources };
+      }
+
+      // Persist the exchange to Supabase
+      if (pipelineId) {
+        saveMessages(pipelineId, [userMsg, assistantMsg!]);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      addMessage({
+      const errorMsg: ChatMessage = {
         role: "assistant",
         content: `Error: ${message}`,
         sources: [],
-      });
+      };
+      addMessage(errorMsg);
     } finally {
       setIsStreaming(false);
     }
-  };
+  }, [input, isStreaming, pipelineId, config, addMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -121,7 +166,7 @@ export default function Step3Chat() {
     }
   };
 
-  const handleReset = () => {
+  const handleNewPipeline = () => {
     reset();
   };
 
@@ -131,9 +176,8 @@ export default function Step3Chat() {
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
-        height: "calc(100vh - 220px)",
-        minHeight: "350px",
-        maxHeight: "calc(100dvh - 180px)",
+        height: "calc(100dvh - 180px)",
+        minHeight: "300px",
       }}
     >
       {/* Header */}
@@ -160,8 +204,8 @@ export default function Step3Chat() {
           </span>
         </div>
         <button
-          onClick={handleReset}
-          className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 cursor-pointer"
+          onClick={handleNewPipeline}
+          className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 cursor-pointer flex items-center gap-1.5"
           style={{
             color: "var(--text-muted)",
             border: "1px solid var(--border)",
@@ -169,7 +213,16 @@ export default function Step3Chat() {
             background: "transparent",
           }}
         >
-          Reset Pipeline
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          New Pipeline
         </button>
       </div>
 

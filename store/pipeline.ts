@@ -19,7 +19,8 @@ interface PipelineStore {
   vectorStore: VectorChunk[];
   messages: ChatMessage[];
   isIngesting: boolean;
-  sessionId: string;
+  pipelineId: string;
+  pipelineName: string;
 
   setStep: (step: 1 | 2 | 3) => void;
   setFiles: (files: File[]) => void;
@@ -28,6 +29,8 @@ interface PipelineStore {
   setVectorStore: (chunks: VectorChunk[]) => void;
   addMessage: (msg: ChatMessage) => void;
   setIsIngesting: (val: boolean) => void;
+  setPipelineId: (id: string) => void;
+  setPipelineName: (name: string) => void;
   reset: () => void;
 }
 
@@ -39,7 +42,8 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   vectorStore: [],
   messages: [],
   isIngesting: false,
-  sessionId: "",
+  pipelineId: "",
+  pipelineName: "Untitled Pipeline",
 
   setStep: (step) => set({ currentStep: step }),
   setFiles: (files) => set({ files }),
@@ -50,6 +54,8 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   addMessage: (msg) =>
     set((state) => ({ messages: [...state.messages, msg] })),
   setIsIngesting: (val) => set({ isIngesting: val }),
+  setPipelineId: (id) => set({ pipelineId: id }),
+  setPipelineName: (name) => set({ pipelineName: name }),
   reset: () =>
     set({
       currentStep: 1,
@@ -59,6 +65,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       vectorStore: [],
       messages: [],
       isIngesting: false,
-      sessionId: "",
+      pipelineId: "",
+      pipelineName: "Untitled Pipeline",
     }),
 }));

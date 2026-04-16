@@ -10,8 +10,8 @@ const TERMINAL_LINES = [
   "Parsing uploaded documents...",
   "Splitting text into chunks...",
   "Generating embeddings via Gemini...",
+  "Storing vectors in Supabase...",
   "Building vector index...",
-  "Storing vectors in memory...",
 ];
 
 export default function Step2Configure() {
@@ -19,10 +19,12 @@ export default function Step2Configure() {
     config,
     setConfig,
     parsedDocs,
-    sessionId,
     isIngesting,
     setIsIngesting,
     setStep,
+    pipelineName,
+    setPipelineName,
+    setPipelineId,
   } = usePipelineStore();
 
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
@@ -30,7 +32,6 @@ export default function Step2Configure() {
   const [error, setError] = useState<string | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll terminal
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -48,21 +49,44 @@ export default function Step2Configure() {
     setTerminalOutput([]);
     setChunkCount(null);
 
-    // Animate terminal lines
     for (let i = 0; i < TERMINAL_LINES.length; i++) {
       await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
       setTerminalOutput((prev) => [...prev, TERMINAL_LINES[i]]);
     }
 
     try {
-      const res = await fetch("/api/ingest", {
+      // Step 1: Create pipeline record in Supabase
+      const createRes = await fetch("/api/pipelines", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.apiKey}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
+          name: pipelineName,
+          config: {
+            apiKey: config.apiKey,
+            model: config.model,
+            chunkSize: config.chunkSize,
+            chunkOverlap: config.chunkOverlap,
+            topK: config.topK,
+            systemPrompt: config.systemPrompt,
+          },
+        }),
+      });
+
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        throw new Error(createData.error || "Failed to create pipeline");
+      }
+
+      const pipelineId: string = createData.pipeline.id;
+      setPipelineId(pipelineId);
+
+      // Step 2: Ingest documents
+      const ingestRes = await fetch("/api/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pipelineId,
+          apiKey: config.apiKey,
           docs: parsedDocs,
           config: {
             chunkSize: config.chunkSize,
@@ -71,19 +95,17 @@ export default function Step2Configure() {
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Ingest failed");
+      const ingestData = await ingestRes.json();
+      if (!ingestRes.ok) {
+        throw new Error(ingestData.error || "Ingest failed");
       }
 
-      setChunkCount(data.chunks);
+      setChunkCount(ingestData.chunks);
       setTerminalOutput((prev) => [
         ...prev,
-        `Pipeline built successfully — ${data.chunks} chunks indexed.`,
+        `Pipeline built successfully — ${ingestData.chunks} chunks indexed.`,
       ]);
 
-      // Auto-advance after a brief pause
       await new Promise((r) => setTimeout(r, 1200));
       setIsIngesting(false);
       setStep(3);
@@ -97,14 +119,43 @@ export default function Step2Configure() {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-xl mx-auto">
-      {/* API Key */}
+      {/* Pipeline Name */}
       <div className="flex flex-col gap-2">
         <label
           className="text-[10px] uppercase tracking-widest"
           style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
         >
-          Gemini API Key
+          Pipeline Name
         </label>
+        <input
+          type="text"
+          value={pipelineName}
+          onChange={(e) => setPipelineName(e.target.value)}
+          placeholder="My Pipeline..."
+          className="px-4 py-3"
+          disabled={isIngesting}
+        />
+      </div>
+
+      {/* API Key */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label
+            className="text-[10px] uppercase tracking-widest"
+            style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
+          >
+            Gemini API Key
+          </label>
+          <a
+            href="https://aistudio.google.com/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] tracking-wide no-underline transition-colors duration-200"
+            style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}
+          >
+            Get API key &rarr;
+          </a>
+        </div>
         <input
           type="password"
           value={config.apiKey}
@@ -123,55 +174,53 @@ export default function Step2Configure() {
         >
           Model
         </label>
-        <div className="flex gap-2">
-          {(["gemini-2.5-flash", "gemini-3-flash-preview"] as GeminiModel[]).map(
-            (model) => (
-              <button
-                key={model}
-                onClick={() => setConfig({ model })}
-                disabled={isIngesting}
-                className="flex-1 px-4 py-2.5 text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
-                style={{
-                  background:
-                    config.model === model
-                      ? "var(--accent-dim)"
-                      : "var(--surface)",
-                  color:
-                    config.model === model
-                      ? "var(--accent)"
-                      : "var(--text-muted)",
-                  border: `1px solid ${config.model === model ? "var(--accent-dim)" : "var(--border)"}`,
-                  fontFamily: "var(--font-body)",
-                }}
-              >
-                {model.includes("flash-preview") ? "3-Flash" : "2.5-Flash"}
-              </button>
-            )
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {(["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-3-pro-preview"] as GeminiModel[]).map(
+            (model) => {
+              const labels: Record<string, string> = {
+                "gemini-2.5-flash": "2.5 Flash",
+                "gemini-2.5-pro": "2.5 Pro",
+                "gemini-3-flash-preview": "3 Flash",
+                "gemini-3-pro-preview": "3 Pro",
+              };
+              return (
+                <button
+                  key={model}
+                  onClick={() => setConfig({ model })}
+                  disabled={isIngesting}
+                  className="px-4 py-2.5 text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+                  style={{
+                    background:
+                      config.model === model
+                        ? "var(--accent-dim)"
+                        : "var(--surface)",
+                    color:
+                      config.model === model
+                        ? "var(--accent)"
+                        : "var(--text-muted)",
+                    border: `1px solid ${config.model === model ? "var(--accent-dim)" : "var(--border)"}`,
+                    fontFamily: "var(--font-body)",
+                  }}
+                >
+                  {labels[model]}
+                </button>
+              );
+            }
           )}
         </div>
       </div>
 
       {/* Sliders */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {/* Chunk Size */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-baseline">
             <label
               className="text-[10px] uppercase tracking-widest"
-              style={{
-                color: "var(--text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
+              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
             >
               Chunk Size
             </label>
-            <span
-              className="text-xs tabular-nums"
-              style={{
-                color: "var(--accent)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
               {config.chunkSize}
             </span>
           </div>
@@ -181,32 +230,20 @@ export default function Step2Configure() {
             max={2048}
             step={64}
             value={config.chunkSize}
-            onChange={(e) =>
-              setConfig({ chunkSize: parseInt(e.target.value) })
-            }
+            onChange={(e) => setConfig({ chunkSize: parseInt(e.target.value) })}
             disabled={isIngesting}
           />
         </div>
 
-        {/* Chunk Overlap */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-baseline">
             <label
               className="text-[10px] uppercase tracking-widest"
-              style={{
-                color: "var(--text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
+              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
             >
               Overlap
             </label>
-            <span
-              className="text-xs tabular-nums"
-              style={{
-                color: "var(--accent)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
               {config.chunkOverlap}
             </span>
           </div>
@@ -216,32 +253,20 @@ export default function Step2Configure() {
             max={256}
             step={16}
             value={config.chunkOverlap}
-            onChange={(e) =>
-              setConfig({ chunkOverlap: parseInt(e.target.value) })
-            }
+            onChange={(e) => setConfig({ chunkOverlap: parseInt(e.target.value) })}
             disabled={isIngesting}
           />
         </div>
 
-        {/* Top-K */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-baseline">
             <label
               className="text-[10px] uppercase tracking-widest"
-              style={{
-                color: "var(--text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
+              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
             >
               Top-K
             </label>
-            <span
-              className="text-xs tabular-nums"
-              style={{
-                color: "var(--accent)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
               {config.topK}
             </span>
           </div>
@@ -368,20 +393,14 @@ export default function Step2Configure() {
           className="relative px-8 py-3 text-xs uppercase tracking-widest font-medium transition-all duration-300 cursor-pointer disabled:cursor-not-allowed"
           style={{
             background:
-              isIngesting || !config.apiKey
-                ? "var(--surface)"
-                : "var(--accent)",
+              isIngesting || !config.apiKey ? "var(--surface)" : "var(--accent)",
             color:
-              isIngesting || !config.apiKey
-                ? "var(--text-dim)"
-                : "var(--bg)",
+              isIngesting || !config.apiKey ? "var(--text-dim)" : "var(--bg)",
             border: `1px solid ${isIngesting || !config.apiKey ? "var(--border)" : "var(--accent)"}`,
             fontFamily: "var(--font-body)",
             opacity: isIngesting || !config.apiKey ? 0.5 : 1,
           }}
-          whileHover={
-            !isIngesting && config.apiKey ? { scale: 1.02 } : {}
-          }
+          whileHover={!isIngesting && config.apiKey ? { scale: 1.02 } : {}}
           whileTap={!isIngesting && config.apiKey ? { scale: 0.98 } : {}}
         >
           {isIngesting ? (
@@ -393,11 +412,7 @@ export default function Step2Configure() {
                   borderTopColor: "transparent",
                 }}
                 animate={{ rotate: 360 }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               />
               Building...
             </span>
@@ -407,16 +422,12 @@ export default function Step2Configure() {
         </motion.button>
       </div>
 
-      {/* Chunk count badge */}
       {chunkCount !== null && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center text-xs py-2"
-          style={{
-            color: "var(--success)",
-            fontFamily: "var(--font-body)",
-          }}
+          style={{ color: "var(--success)", fontFamily: "var(--font-body)" }}
         >
           {chunkCount} chunks indexed successfully
         </motion.div>

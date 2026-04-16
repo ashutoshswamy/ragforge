@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 interface StepperProps {
   currentStep: 1 | 2 | 3;
+  onStepClick?: (step: 1 | 2 | 3) => void;
 }
 
 const STEPS = [
@@ -12,7 +13,7 @@ const STEPS = [
   { num: 3, label: "Chat" },
 ] as const;
 
-export default function Stepper({ currentStep }: StepperProps) {
+export default function Stepper({ currentStep, onStepClick }: StepperProps) {
   return (
     <div className="flex items-center justify-center gap-0 w-full max-w-md mx-auto">
       {STEPS.map((step, i) => {
@@ -21,7 +22,14 @@ export default function Stepper({ currentStep }: StepperProps) {
 
         return (
           <div key={step.num} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-2">
+            <div
+              className={`flex flex-col items-center gap-2 ${isCompleted || isActive ? "cursor-pointer" : ""}`}
+              onClick={() => {
+                if ((isCompleted || isActive) && onStepClick) {
+                  onStepClick(step.num);
+                }
+              }}
+            >
               {/* Step circle */}
               <div className="relative">
                 <motion.div

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Syne, DM_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const syne = Syne({
@@ -28,8 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmMono.variable}`}>
-      <body className="min-h-screen flex flex-col noise-bg">{children}</body>
-    </html>
+    <ClerkProvider afterSignOutUrl="/" signInUrl="/sign-in" signUpUrl="/sign-up" signInFallbackRedirectUrl="/pipelines" signUpFallbackRedirectUrl="/pipelines">
+      <html lang="en" className={`${syne.variable} ${dmMono.variable}`}>
+        <body className="min-h-screen flex flex-col noise-bg">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

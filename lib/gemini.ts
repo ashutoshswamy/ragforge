@@ -7,7 +7,11 @@ export async function embedText(
 ): Promise<number[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-embedding-2-preview" });
-  const result = await model.embedContent(text);
+  const result = await model.embedContent({
+    content: { parts: [{ text }], role: "user" },
+    // 768 dims: fits pgvector ivfflat/hnsw limit (max 2000)
+    outputDimensionality: 768,
+  } as Parameters<typeof model.embedContent>[0]);
   return result.embedding.values;
 }
 

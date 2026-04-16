@@ -1,35 +1,48 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { embedText } from "@/lib/gemini";
 import { search } from "@/lib/vectorstore";
 import { queryRAG } from "@/lib/rag";
+import { supabase } from "@/lib/supabase";
 import { QueryRequestSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Missing or invalid Authorization header" },
-        { status: 401 }
-      );
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const apiKey = authHeader.replace("Bearer ", "");
 
     const json = await request.json();
     const result = QueryRequestSchema.safeParse(json);
 
     if (!result.success) {
       return NextResponse.json(
-        { error: "Invalid request payload", details: result.error.format() },
+        { error: "Invalid request payload" },
         { status: 400 }
       );
     }
 
-    const { sessionId, question, config } = result.data;
+    const { pipelineId, apiKey, question, config } = result.data;
     const { model, topK, systemPrompt } = config;
 
+    // Verify pipeline ownership
+    const { data: pipeline } = await supabase
+      .from("pipelines")
+      .select("id")
+      .eq("id", pipelineId)
+      .eq("user_id", userId)
+      .single();
+
+    if (!pipeline) {
+      return NextResponse.json(
+        { error: "Pipeline not found" },
+        { status: 404 }
+      );
+    }
+
     const queryEmbedding = await embedText(apiKey, question);
-    const relevantChunks = search(sessionId, queryEmbedding, topK);
+    const relevantChunks = await search(pipelineId, queryEmbedding, topK);
 
     if (relevantChunks.length === 0) {
       return NextResponse.json(
