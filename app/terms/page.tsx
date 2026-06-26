@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 
-export const metadata = {
-  title: "Terms of Service — RAGForge",
+export const metadata: Metadata = {
+  title: "Terms of Service",
   description: "RAGForge terms of service. Understand the rules governing use of our platform.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsOfService() {

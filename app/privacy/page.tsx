@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 
-export const metadata = {
-  title: "Privacy Policy — RAGForge",
+export const metadata: Metadata = {
+  title: "Privacy Policy",
   description: "RAGForge privacy policy. Learn how we handle your data.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPolicy() {
