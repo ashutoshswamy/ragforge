@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { usePipelineStore } from "@/store/pipeline";
 import Stepper from "@/components/stepper/Stepper";
@@ -10,34 +9,32 @@ import Step2Configure from "@/components/steps/Step2Configure";
 import Step3Chat from "@/components/steps/Step3Chat";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
-const stepVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 60 : -60,
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? 60 : -60,
-    opacity: 0,
-  }),
-};
+gsap.registerPlugin(useGSAP);
 
 export default function PipelinePage() {
   const { currentStep, pipelineId, setStep } = usePipelineStore();
   const { user } = useUser();
-  const prevStep = useRef(currentStep);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const prevStepRef = useRef(currentStep);
 
-  const direction = currentStep >= prevStep.current ? 1 : -1;
-  prevStep.current = currentStep;
+  /* Animate step content on change */
+  useGSAP(() => {
+    if (!contentRef.current) return;
+    const direction = currentStep >= prevStepRef.current ? 1 : -1;
+    prevStepRef.current = currentStep;
+
+    gsap.fromTo(
+      contentRef.current,
+      { opacity: 0, x: direction * 40 },
+      { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }
+    );
+  }, { dependencies: [currentStep] });
 
   const handleStepClick = (step: 1 | 2 | 3) => {
-    if (step < currentStep) {
-      setStep(step);
-    }
+    if (step < currentStep) setStep(step);
   };
 
   return (
@@ -45,18 +42,15 @@ export default function PipelinePage() {
       {/* Top bar */}
       <header
         className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
       >
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-bold tracking-tight no-underline group"
-          style={{
-            fontFamily: "var(--font-heading)",
-            color: "var(--text)",
-          }}
+          className="flex items-center gap-2 no-underline group"
+          style={{ fontFamily: "var(--font-heading)", color: "var(--text)" }}
         >
           <Logo size="sm" className="transition-transform duration-300 group-hover:scale-110" />
-          <span>
+          <span className="text-lg font-bold tracking-tight">
             RAG<span style={{ color: "var(--accent)" }}>Forge</span>
           </span>
         </Link>
@@ -65,21 +59,26 @@ export default function PipelinePage() {
           {pipelineId && (
             <div
               className="hidden sm:block text-[10px] uppercase tracking-widest"
-              style={{
-                color: "var(--text-dim)",
-                fontFamily: "var(--font-body)",
-              }}
+              style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
             >
               Pipeline: {pipelineId.slice(0, 8)}
             </div>
           )}
           <Link
             href="/pipelines"
-            className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 flex items-center gap-1.5"
+            className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 flex items-center gap-1.5 cursor-pointer"
             style={{
               color: "var(--text-muted)",
               border: "1px solid var(--border)",
               fontFamily: "var(--font-body)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-dim)";
+              (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
             }}
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -89,10 +88,7 @@ export default function PipelinePage() {
           </Link>
           <div className="flex items-center gap-2">
             {user && (
-              <span
-                className="hidden sm:block text-xs"
-                style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-              >
+              <span className="hidden sm:block text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
                 {user.primaryEmailAddress?.emailAddress}
               </span>
             )}
@@ -108,34 +104,17 @@ export default function PipelinePage() {
 
       {/* Step content */}
       <div className="flex-1 px-4 sm:px-6 pb-6 sm:pb-8 overflow-hidden">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={currentStep}
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "tween", duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
-              opacity: { duration: 0.25 },
-            }}
-            className="h-full"
-          >
-            {currentStep === 1 && <Step1Upload />}
-            {currentStep === 2 && <Step2Configure />}
-            {currentStep === 3 && <Step3Chat />}
-          </motion.div>
-        </AnimatePresence>
+        <div ref={contentRef} className="h-full">
+          {currentStep === 1 && <Step1Upload />}
+          {currentStep === 2 && <Step2Configure />}
+          {currentStep === 3 && <Step3Chat />}
+        </div>
       </div>
 
       {/* Bottom accent */}
       <div
         className="h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--accent-dim), transparent)",
-        }}
+        style={{ background: "linear-gradient(90deg, transparent, var(--accent-dim), transparent)" }}
       />
     </div>
   );

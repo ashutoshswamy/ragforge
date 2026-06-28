@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { usePipelineStore } from "@/store/pipeline";
 import ChatBubble from "@/components/ui/ChatBubble";
 import type { ChatMessage } from "@/types";
@@ -14,13 +13,12 @@ async function saveMessages(pipelineId: string, messages: ChatMessage[]) {
       body: JSON.stringify({ pipelineId, messages }),
     });
   } catch {
-    // Silent fail — chat still works, just not persisted
+    // ponytail: silent fail — chat works without persistence
   }
 }
 
 export default function Step3Chat() {
-  const { messages, addMessage, config, setConfig, pipelineId, reset } =
-    usePipelineStore();
+  const { messages, addMessage, config, setConfig, pipelineId, reset } = usePipelineStore();
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -30,41 +28,26 @@ export default function Step3Chat() {
 
   const needsApiKey = !config.apiKey;
 
-  // Reset history flag when pipeline changes
-  useEffect(() => {
-    setHistoryLoaded(false);
-  }, [pipelineId]);
+  useEffect(() => { setHistoryLoaded(false); }, [pipelineId]);
 
-  // Load chat history when opening an existing pipeline
   useEffect(() => {
     if (!pipelineId || historyLoaded) return;
-
     const loadHistory = async () => {
       try {
         const res = await fetch(`/api/messages?pipelineId=${pipelineId}`);
         if (!res.ok) return;
         const data = await res.json();
         const history: ChatMessage[] = data.messages ?? [];
-        if (history.length > 0) {
-          usePipelineStore.setState({ messages: history });
-        }
+        if (history.length > 0) usePipelineStore.setState({ messages: history });
       } finally {
         setHistoryLoaded(true);
       }
     };
-
     loadHistory();
   }, [pipelineId, historyLoaded]);
 
-  // Auto-scroll on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Focus input on mount
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   const handleSend = useCallback(async () => {
     const question = input.trim();
@@ -83,11 +66,7 @@ export default function Step3Chat() {
           pipelineId,
           apiKey: config.apiKey,
           question,
-          config: {
-            model: config.model,
-            topK: config.topK,
-            systemPrompt: config.systemPrompt,
-          },
+          config: { model: config.model, topK: config.topK, systemPrompt: config.systemPrompt },
         }),
       });
 
@@ -101,165 +80,86 @@ export default function Step3Chat() {
 
       if (contentType.includes("application/json")) {
         const data = await res.json();
-        assistantMsg = {
-          role: "assistant",
-          content: data.answer,
-          sources: data.sources,
-        };
+        assistantMsg = { role: "assistant", content: data.answer, sources: data.sources };
         addMessage(assistantMsg);
       } else {
         const sourcesHeader = res.headers.get("X-Sources");
-        const sources: string[] = sourcesHeader
-          ? JSON.parse(sourcesHeader)
-          : [];
-
+        const sources: string[] = sourcesHeader ? JSON.parse(sourcesHeader) : [];
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         let fullText = "";
 
         if (reader) {
           addMessage({ role: "assistant", content: "", sources });
-
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            fullText += chunk;
-
+            fullText += decoder.decode(value, { stream: true });
             usePipelineStore.setState((state) => {
               const msgs = [...state.messages];
-              const lastMsg = msgs[msgs.length - 1];
-              if (lastMsg && lastMsg.role === "assistant") {
-                msgs[msgs.length - 1] = {
-                  ...lastMsg,
-                  content: fullText,
-                  sources,
-                };
-              }
+              const last = msgs[msgs.length - 1];
+              if (last?.role === "assistant") msgs[msgs.length - 1] = { ...last, content: fullText, sources };
               return { messages: msgs };
             });
           }
         }
-
         assistantMsg = { role: "assistant", content: fullText, sources };
       }
 
-      // Persist the exchange to Supabase
-      if (pipelineId) {
-        saveMessages(pipelineId, [userMsg, assistantMsg!]);
-      }
+      if (pipelineId) saveMessages(pipelineId, [userMsg, assistantMsg!]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      const errorMsg: ChatMessage = {
-        role: "assistant",
-        content: `Error: ${message}`,
-        sources: [],
-      };
-      addMessage(errorMsg);
+      addMessage({ role: "assistant", content: `Error: ${message}`, sources: [] });
     } finally {
       setIsStreaming(false);
     }
   }, [input, isStreaming, pipelineId, config, addMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleNewPipeline = () => {
-    reset();
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   return (
     <div
-      className="flex flex-col w-full max-w-2xl mx-auto rounded overflow-hidden"
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        height: "calc(100dvh - 180px)",
-        minHeight: "300px",
-      }}
+      className="flex flex-col w-full max-w-2xl mx-auto rounded overflow-hidden h-[calc(100dvh-240px)] sm:h-[calc(100dvh-210px)] lg:h-[calc(100dvh-180px)]"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", minHeight: "320px" }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3"
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--bg)",
-        }}
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: "var(--success)" }}
-          />
-          <span
-            className="text-xs uppercase tracking-widest"
-            style={{
-              color: "var(--text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <div className="w-2 h-2 rounded-full" style={{ background: "var(--success)" }} />
+          <span className="text-xs uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
             Pipeline Active
           </span>
         </div>
         <button
-          onClick={handleNewPipeline}
+          onClick={reset}
           className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 cursor-pointer flex items-center gap-1.5"
-          style={{
-            color: "var(--text-muted)",
-            border: "1px solid var(--border)",
-            fontFamily: "var(--font-body)",
-            background: "transparent",
-          }}
+          style={{ color: "var(--text-muted)", border: "1px solid var(--border)", fontFamily: "var(--font-body)", background: "transparent" }}
+          onMouseEnter={(e) => { (e.currentTarget).style.borderColor = "var(--accent-dim)"; (e.currentTarget).style.color = "var(--accent)"; }}
+          onMouseLeave={(e) => { (e.currentTarget).style.borderColor = "var(--border)"; (e.currentTarget).style.color = "var(--text-muted)"; }}
         >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           New Pipeline
         </button>
       </div>
 
-      {/* API Key prompt for reopened pipelines */}
+      {/* API Key prompt */}
       {needsApiKey && (
         <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6">
           <div className="flex flex-col items-center gap-2">
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1}
-              style={{ color: "var(--accent)" }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-              />
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: "var(--accent)" }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
-            <p
-              className="text-sm font-bold tracking-wide"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
+            <p className="text-sm font-bold tracking-wide" style={{ fontFamily: "var(--font-heading)" }}>
               API Key Required
             </p>
-            <p
-              className="text-xs text-center max-w-xs"
-              style={{
-                color: "var(--text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-xs text-center max-w-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
               Your Gemini API key is never stored. Enter it to resume chatting with this pipeline.
             </p>
           </div>
@@ -268,36 +168,19 @@ export default function Step3Chat() {
               type="password"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && apiKeyInput.trim()) {
-                  setConfig({ apiKey: apiKeyInput.trim() });
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter" && apiKeyInput.trim()) setConfig({ apiKey: apiKeyInput.trim() }); }}
               placeholder="Enter Gemini API key"
               className="flex-1 px-3 py-2 text-sm rounded-none outline-none"
-              style={{
-                background: "var(--bg)",
-                border: "1px solid var(--border)",
-                color: "var(--text)",
-                fontFamily: "var(--font-body)",
-              }}
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)", fontFamily: "var(--font-body)" }}
               autoFocus
             />
             <button
-              onClick={() => {
-                if (apiKeyInput.trim()) {
-                  setConfig({ apiKey: apiKeyInput.trim() });
-                }
-              }}
+              onClick={() => { if (apiKeyInput.trim()) setConfig({ apiKey: apiKeyInput.trim() }); }}
               disabled={!apiKeyInput.trim()}
               className="px-4 py-2 text-xs uppercase tracking-widest transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
               style={{
-                background: apiKeyInput.trim()
-                  ? "var(--accent)"
-                  : "var(--border)",
-                color: apiKeyInput.trim()
-                  ? "var(--bg)"
-                  : "var(--text-dim)",
+                background: apiKeyInput.trim() ? "var(--accent)" : "var(--border)",
+                color: apiKeyInput.trim() ? "var(--bg)" : "var(--text-dim)",
                 fontFamily: "var(--font-body)",
               }}
             >
@@ -307,129 +190,69 @@ export default function Step3Chat() {
         </div>
       )}
 
-      {/* Messages area */}
-      {!needsApiKey && <div className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col gap-3 sm:gap-4">
-        {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1}
-              style={{ color: "var(--text-dim)" }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            <p
-              className="text-xs"
-              style={{
-                color: "var(--text-dim)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              Ask a question about your documents
-            </p>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <ChatBubble key={i} message={msg} />
-        ))}
-        <div ref={messagesEndRef} />
-      </div>}
-
-      {/* Input area */}
-      {!needsApiKey &&
-      <div
-        className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3"
-        style={{
-          borderTop: "1px solid var(--border)",
-          background: "var(--bg)",
-        }}
-      >
-        <span
-          className="text-xs flex-shrink-0"
-          style={{
-            color: isStreaming ? "var(--text-dim)" : "var(--accent)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          &gt;
-        </span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            isStreaming ? "Generating response..." : "Ask a question..."
-          }
-          disabled={isStreaming}
-          className="flex-1 py-2 px-0 text-sm bg-transparent border-none outline-none"
-          style={{
-            color: "var(--text)",
-            fontFamily: "var(--font-body)",
-            background: "transparent",
-          }}
-        />
-        <motion.button
-          onClick={handleSend}
-          disabled={isStreaming || !input.trim()}
-          className="flex-shrink-0 p-2 rounded transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
-          style={{
-            background:
-              isStreaming || !input.trim()
-                ? "transparent"
-                : "var(--accent)",
-            color:
-              isStreaming || !input.trim()
-                ? "var(--text-dim)"
-                : "var(--bg)",
-          }}
-          whileHover={
-            !isStreaming && input.trim() ? { scale: 1.05 } : {}
-          }
-          whileTap={
-            !isStreaming && input.trim() ? { scale: 0.95 } : {}
-          }
-        >
-          {isStreaming ? (
-            <motion.div
-              className="w-4 h-4 rounded-full border-2"
-              style={{
-                borderColor: "var(--text-dim)",
-                borderTopColor: "transparent",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            />
-          ) : (
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-              />
-            </svg>
+      {/* Messages */}
+      {!needsApiKey && (
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col gap-3 sm:gap-4">
+          {messages.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: "var(--text-dim)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <p className="text-xs" style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}>
+                Ask a question about your documents
+              </p>
+            </div>
           )}
-        </motion.button>
-      </div>}
+          {messages.map((msg, i) => <ChatBubble key={i} message={msg} />)}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
+
+      {/* Input */}
+      {!needsApiKey && (
+        <div
+          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3"
+          style={{ borderTop: "1px solid var(--border)", background: "var(--bg)" }}
+        >
+          <span
+            className="text-xs flex-shrink-0"
+            style={{ color: isStreaming ? "var(--text-dim)" : "var(--accent)", fontFamily: "var(--font-body)" }}
+          >
+            &gt;
+          </span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isStreaming ? "Generating response..." : "Ask a question..."}
+            disabled={isStreaming}
+            className="flex-1 py-2 px-0 text-sm bg-transparent border-none outline-none"
+            style={{ color: "var(--text)", fontFamily: "var(--font-body)", background: "transparent" }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={isStreaming || !input.trim()}
+            className="flex-shrink-0 p-2 rounded transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+            style={{
+              background: isStreaming || !input.trim() ? "transparent" : "var(--accent)",
+              color: isStreaming || !input.trim() ? "var(--text-dim)" : "var(--bg)",
+            }}
+          >
+            {isStreaming ? (
+              <div
+                className="w-4 h-4 rounded-full border-2"
+                style={{ borderColor: "var(--text-dim)", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }}
+              />
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

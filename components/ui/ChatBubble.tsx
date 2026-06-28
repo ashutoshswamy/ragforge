@@ -1,10 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import type { ChatMessage } from "@/types";
 import SourceChip from "./SourceChip";
+
+gsap.registerPlugin(useGSAP);
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -12,17 +16,23 @@ interface ChatBubbleProps {
 
 export default function ChatBubble({ message }: ChatBubbleProps) {
   const isUser = message.role === "user";
+  const ref = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    gsap.from(ref.current, {
+      opacity: 0,
+      y: 12,
+      duration: 0.3,
+      ease: "power2.out",
+    });
+  }, { scope: ref });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+    <div
+      ref={ref}
       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
     >
-      <div
-        className={`max-w-[85%] sm:max-w-[80%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}
-      >
+      <div className={`max-w-[92%] sm:max-w-[85%] lg:max-w-[75%] flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
         {/* Role label */}
         <span
           className="text-[10px] uppercase tracking-widest px-1"
@@ -36,15 +46,13 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
 
         {/* Message bubble */}
         <div
-          className="px-4 py-3 text-sm leading-relaxed rounded"
+          className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm leading-relaxed rounded"
           style={{
             background: isUser ? "var(--surface-elevated)" : "var(--surface)",
             border: `1px solid ${isUser ? "var(--border-active)" : "var(--border)"}`,
             color: "var(--text)",
             fontFamily: "var(--font-body)",
-            borderLeft: isUser
-              ? undefined
-              : "2px solid var(--accent-dim)",
+            borderLeft: isUser ? undefined : "2px solid var(--accent-dim)",
             wordBreak: "break-word",
           }}
         >
@@ -54,55 +62,34 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                p: ({ children }) => (
-                  <p className="mb-2 last:mb-0">{children}</p>
-                ),
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
                 strong: ({ children }) => (
-                  <strong style={{ color: "var(--accent)", fontWeight: 600 }}>
-                    {children}
-                  </strong>
+                  <strong style={{ color: "var(--accent)", fontWeight: 600 }}>{children}</strong>
                 ),
-                ul: ({ children }) => (
-                  <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>
-                ),
+                ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
                 li: ({ children }) => <li>{children}</li>,
                 h1: ({ children }) => (
-                  <h1 className="text-base font-bold mb-2" style={{ color: "var(--accent)" }}>
-                    {children}
-                  </h1>
+                  <h1 className="text-base font-bold mb-2" style={{ color: "var(--accent)" }}>{children}</h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="text-sm font-bold mb-2" style={{ color: "var(--accent)" }}>
-                    {children}
-                  </h2>
+                  <h2 className="text-sm font-bold mb-2" style={{ color: "var(--accent)" }}>{children}</h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--accent-dim)" }}>
-                    {children}
-                  </h3>
+                  <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--accent-dim)" }}>{children}</h3>
                 ),
                 code: ({ children }) => (
                   <code
                     className="px-1 py-0.5 rounded text-xs"
-                    style={{
-                      background: "var(--surface-elevated)",
-                      border: "1px solid var(--border)",
-                      color: "var(--accent)",
-                    }}
+                    style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--accent)" }}
                   >
                     {children}
                   </code>
                 ),
                 pre: ({ children }) => (
                   <pre
-                    className="p-3 rounded text-xs overflow-x-auto mb-2"
-                    style={{
-                      background: "var(--surface-elevated)",
-                      border: "1px solid var(--border)",
-                    }}
+                    className="p-2 sm:p-3 rounded text-[10px] sm:text-xs overflow-x-auto mb-2 max-w-full"
+                    style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}
                   >
                     {children}
                   </pre>
@@ -132,6 +119,6 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { usePipelineStore } from "@/store/pipeline";
 import type { GeminiModel } from "@/types";
 
@@ -16,15 +15,8 @@ const TERMINAL_LINES = [
 
 export default function Step2Configure() {
   const {
-    config,
-    setConfig,
-    parsedDocs,
-    isIngesting,
-    setIsIngesting,
-    setStep,
-    pipelineName,
-    setPipelineName,
-    setPipelineId,
+    config, setConfig, parsedDocs, isIngesting, setIsIngesting,
+    setStep, pipelineName, setPipelineName, setPipelineId,
   } = usePipelineStore();
 
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
@@ -39,10 +31,7 @@ export default function Step2Configure() {
   }, [terminalOutput]);
 
   const handleIngest = async () => {
-    if (!config.apiKey) {
-      setError("API key is required");
-      return;
-    }
+    if (!config.apiKey) { setError("API key is required"); return; }
 
     setError(null);
     setIsIngesting(true);
@@ -55,7 +44,6 @@ export default function Step2Configure() {
     }
 
     try {
-      // Step 1: Create pipeline record in Supabase
       const createRes = await fetch("/api/pipelines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,14 +61,11 @@ export default function Step2Configure() {
       });
 
       const createData = await createRes.json();
-      if (!createRes.ok) {
-        throw new Error(createData.error || "Failed to create pipeline");
-      }
+      if (!createRes.ok) throw new Error(createData.error || "Failed to create pipeline");
 
       const pipelineId: string = createData.pipeline.id;
       setPipelineId(pipelineId);
 
-      // Step 2: Ingest documents
       const ingestRes = await fetch("/api/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,23 +73,15 @@ export default function Step2Configure() {
           pipelineId,
           apiKey: config.apiKey,
           docs: parsedDocs,
-          config: {
-            chunkSize: config.chunkSize,
-            chunkOverlap: config.chunkOverlap,
-          },
+          config: { chunkSize: config.chunkSize, chunkOverlap: config.chunkOverlap },
         }),
       });
 
       const ingestData = await ingestRes.json();
-      if (!ingestRes.ok) {
-        throw new Error(ingestData.error || "Ingest failed");
-      }
+      if (!ingestRes.ok) throw new Error(ingestData.error || "Ingest failed");
 
       setChunkCount(ingestData.chunks);
-      setTerminalOutput((prev) => [
-        ...prev,
-        `Pipeline built successfully — ${ingestData.chunks} chunks indexed.`,
-      ]);
+      setTerminalOutput((prev) => [...prev, `Pipeline built successfully — ${ingestData.chunks} chunks indexed.`]);
 
       await new Promise((r) => setTimeout(r, 1200));
       setIsIngesting(false);
@@ -117,14 +94,13 @@ export default function Step2Configure() {
     }
   };
 
+  const canBuild = !isIngesting && !!config.apiKey;
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-xl mx-auto">
       {/* Pipeline Name */}
       <div className="flex flex-col gap-2">
-        <label
-          className="text-[10px] uppercase tracking-widest"
-          style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-        >
+        <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
           Pipeline Name
         </label>
         <input
@@ -140,10 +116,7 @@ export default function Step2Configure() {
       {/* API Key */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label
-            className="text-[10px] uppercase tracking-widest"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-          >
+          <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
             Gemini API Key
           </label>
           <a
@@ -168,126 +141,70 @@ export default function Step2Configure() {
 
       {/* Model selector */}
       <div className="flex flex-col gap-2">
-        <label
-          className="text-[10px] uppercase tracking-widest"
-          style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-        >
+        <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
           Model
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-3-pro-preview"] as GeminiModel[]).map(
-            (model) => {
-              const labels: Record<string, string> = {
-                "gemini-2.5-flash": "2.5 Flash",
-                "gemini-2.5-pro": "2.5 Pro",
-                "gemini-3-flash-preview": "3 Flash",
-                "gemini-3-pro-preview": "3 Pro",
-              };
-              return (
-                <button
-                  key={model}
-                  onClick={() => setConfig({ model })}
-                  disabled={isIngesting}
-                  className="px-4 py-2.5 text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
-                  style={{
-                    background:
-                      config.model === model
-                        ? "var(--accent-dim)"
-                        : "var(--surface)",
-                    color:
-                      config.model === model
-                        ? "var(--accent)"
-                        : "var(--text-muted)",
-                    border: `1px solid ${config.model === model ? "var(--accent-dim)" : "var(--border)"}`,
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  {labels[model]}
-                </button>
-              );
-            }
-          )}
+          {(["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-3-pro-preview"] as GeminiModel[]).map((model) => {
+            const labels: Record<string, string> = {
+              "gemini-2.5-flash": "2.5 Flash",
+              "gemini-2.5-pro": "2.5 Pro",
+              "gemini-3-flash-preview": "3 Flash",
+              "gemini-3-pro-preview": "3 Pro",
+            };
+            const isSelected = config.model === model;
+            return (
+              <button
+                key={model}
+                onClick={() => setConfig({ model })}
+                disabled={isIngesting}
+                className="px-4 py-2.5 text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+                style={{
+                  background: isSelected ? "var(--accent-dim)" : "var(--surface)",
+                  color: isSelected ? "var(--accent)" : "var(--text-muted)",
+                  border: `1px solid ${isSelected ? "var(--accent-dim)" : "var(--border)"}`,
+                  fontFamily: "var(--font-body)",
+                }}
+              >
+                {labels[model]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Sliders */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-baseline">
-            <label
-              className="text-[10px] uppercase tracking-widest"
-              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-            >
-              Chunk Size
-            </label>
-            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
-              {config.chunkSize}
-            </span>
+        {[
+          { label: "Chunk Size", min: 256, max: 2048, step: 64, key: "chunkSize" as const },
+          { label: "Overlap", min: 0, max: 256, step: 16, key: "chunkOverlap" as const },
+          { label: "Top-K", min: 1, max: 10, step: 1, key: "topK" as const },
+        ].map(({ label, min, max, step, key }) => (
+          <div key={key} className="flex flex-col gap-2">
+            <div className="flex justify-between items-baseline">
+              <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
+                {label}
+              </label>
+              <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
+                {config[key]}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={config[key]}
+              onChange={(e) => setConfig({ [key]: parseInt(e.target.value) })}
+              disabled={isIngesting}
+            />
           </div>
-          <input
-            type="range"
-            min={256}
-            max={2048}
-            step={64}
-            value={config.chunkSize}
-            onChange={(e) => setConfig({ chunkSize: parseInt(e.target.value) })}
-            disabled={isIngesting}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-baseline">
-            <label
-              className="text-[10px] uppercase tracking-widest"
-              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-            >
-              Overlap
-            </label>
-            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
-              {config.chunkOverlap}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={256}
-            step={16}
-            value={config.chunkOverlap}
-            onChange={(e) => setConfig({ chunkOverlap: parseInt(e.target.value) })}
-            disabled={isIngesting}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-baseline">
-            <label
-              className="text-[10px] uppercase tracking-widest"
-              style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-            >
-              Top-K
-            </label>
-            <span className="text-xs tabular-nums" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
-              {config.topK}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={config.topK}
-            onChange={(e) => setConfig({ topK: parseInt(e.target.value) })}
-            disabled={isIngesting}
-          />
-        </div>
+        ))}
       </div>
 
       {/* System Prompt */}
       <div className="flex flex-col gap-2">
-        <label
-          className="text-[10px] uppercase tracking-widest"
-          style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
-        >
+        <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
           System Prompt
         </label>
         <textarea
@@ -319,60 +236,36 @@ export default function Step2Configure() {
         <div
           ref={terminalRef}
           className="relative rounded overflow-hidden scanlines"
-          style={{
-            background: "#0A0A0A",
-            border: "1px solid var(--border)",
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
+          style={{ background: "#0A0A0A", border: "1px solid var(--border)", maxHeight: "clamp(140px, 33vh, 240px)", overflowY: "auto" }}
         >
           <div
             className="px-3 py-1.5 text-[10px] uppercase tracking-widest"
-            style={{
-              background: "var(--surface)",
-              color: "var(--text-dim)",
-              fontFamily: "var(--font-body)",
-              borderBottom: "1px solid var(--border)",
-            }}
+            style={{ background: "var(--surface)", color: "var(--text-dim)", fontFamily: "var(--font-body)", borderBottom: "1px solid var(--border)" }}
           >
             terminal
           </div>
           <div className="p-4 flex flex-col gap-1.5">
             {terminalOutput.map((line, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-xs flex gap-2"
+                className="text-xs flex gap-2 animate-term-line"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 <span style={{ color: "var(--accent)" }}>$</span>
-                <span
-                  style={{
-                    color: line.startsWith("ERROR")
-                      ? "var(--error)"
-                      : line.includes("successfully")
-                        ? "var(--success)"
-                        : "var(--text-muted)",
-                  }}
-                >
+                <span style={{ color: line.startsWith("ERROR") ? "var(--error)" : line.includes("successfully") ? "var(--success)" : "var(--text-muted)" }}>
                   {line}
                 </span>
-              </motion.div>
+              </div>
             ))}
             {isIngesting && (
-              <span
-                className="cursor-blink text-xs"
-                style={{ fontFamily: "var(--font-body)" }}
-              />
+              <span className="cursor-blink text-xs" style={{ fontFamily: "var(--font-body)" }} />
             )}
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3">
         <button
           onClick={() => setStep(1)}
           disabled={isIngesting}
@@ -387,50 +280,38 @@ export default function Step2Configure() {
           &larr; Back
         </button>
 
-        <motion.button
+        <button
           onClick={handleIngest}
-          disabled={isIngesting || !config.apiKey}
+          disabled={!canBuild}
           className="relative px-8 py-3 text-xs uppercase tracking-widest font-medium transition-all duration-300 cursor-pointer disabled:cursor-not-allowed"
           style={{
-            background:
-              isIngesting || !config.apiKey ? "var(--surface)" : "var(--accent)",
-            color:
-              isIngesting || !config.apiKey ? "var(--text-dim)" : "var(--bg)",
-            border: `1px solid ${isIngesting || !config.apiKey ? "var(--border)" : "var(--accent)"}`,
+            background: canBuild ? "var(--accent)" : "var(--surface)",
+            color: canBuild ? "var(--bg)" : "var(--text-dim)",
+            border: `1px solid ${canBuild ? "var(--accent)" : "var(--border)"}`,
             fontFamily: "var(--font-body)",
-            opacity: isIngesting || !config.apiKey ? 0.5 : 1,
+            opacity: canBuild ? 1 : 0.5,
           }}
-          whileHover={!isIngesting && config.apiKey ? { scale: 1.02 } : {}}
-          whileTap={!isIngesting && config.apiKey ? { scale: 0.98 } : {}}
+          onMouseEnter={(e) => { if (canBuild) (e.currentTarget).style.boxShadow = "0 0 20px var(--accent-glow)"; }}
+          onMouseLeave={(e) => { (e.currentTarget).style.boxShadow = "none"; }}
         >
           {isIngesting ? (
             <span className="flex items-center gap-2">
-              <motion.span
+              <span
                 className="inline-block w-3 h-3 rounded-full border-2"
-                style={{
-                  borderColor: "var(--text-dim)",
-                  borderTopColor: "transparent",
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                style={{ borderColor: "var(--text-dim)", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }}
               />
               Building...
             </span>
           ) : (
             "Build Pipeline"
           )}
-        </motion.button>
+        </button>
       </div>
 
       {chunkCount !== null && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center text-xs py-2"
-          style={{ color: "var(--success)", fontFamily: "var(--font-body)" }}
-        >
+        <div className="text-center text-xs py-2" style={{ color: "var(--success)", fontFamily: "var(--font-body)" }}>
           {chunkCount} chunks indexed successfully
-        </motion.div>
+        </div>
       )}
     </div>
   );
