@@ -144,13 +144,14 @@ export default function Step2Configure() {
         <label className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
           Model
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-3-pro-preview"] as GeminiModel[]).map((model) => {
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {(["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-3.5-flash"] as GeminiModel[]).map((model) => {
             const labels: Record<string, string> = {
               "gemini-2.5-flash": "2.5 Flash",
               "gemini-2.5-pro": "2.5 Pro",
               "gemini-3-flash-preview": "3 Flash",
-              "gemini-3-pro-preview": "3 Pro",
+              "gemini-3.1-flash-lite": "3.1 Flash Lite",
+              "gemini-3.5-flash": "3.5 Flash",
             };
             const isSelected = config.model === model;
             return (

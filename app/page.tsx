@@ -247,8 +247,7 @@ export default function HomePage() {
   /* Hero entrance timeline */
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    tl.from(".hero-badge", { opacity: 0, y: 12, duration: 0.4 })
-      .from(".hero-title-line", { opacity: 0, y: 44, duration: 0.65, stagger: 0.1 }, "-=0.15")
+    tl.from(".hero-title-line", { opacity: 0, y: 44, duration: 0.65, stagger: 0.1 })
       .from(".hero-subtitle", { opacity: 0, y: 20, duration: 0.5 }, "-=0.25")
       .from(".hero-cta-row", { opacity: 0, y: 16, duration: 0.5 }, "-=0.25")
       .from(".hero-stats", { opacity: 0, y: 12, duration: 0.45 }, "-=0.2")
@@ -385,21 +384,6 @@ export default function HomePage() {
 
         {/* Left: Copy */}
         <div className="relative z-10 flex flex-col gap-7">
-          {/* Badge */}
-          <div
-            className="hero-badge inline-flex items-center gap-2 self-start px-3 py-1.5"
-            style={{
-              border: "1px solid var(--accent-dim)",
-              background: "rgba(245,130,10,0.07)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--accent)" }} />
-            <span className="text-[10px] uppercase tracking-[0.25em]" style={{ color: "var(--accent)" }}>
-              Gemini 2.5 · RAG Pipeline
-            </span>
-          </div>
-
           {/* Headline */}
           <div className="flex flex-col gap-0 overflow-hidden">
             <h1
