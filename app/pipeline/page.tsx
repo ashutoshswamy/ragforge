@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-context";
+import UserMenu from "@/components/ui/UserMenu";
 import { usePipelineStore } from "@/store/pipeline";
 import Stepper from "@/components/stepper/Stepper";
 import Step1Upload from "@/components/steps/Step1Upload";
@@ -16,7 +17,7 @@ gsap.registerPlugin(useGSAP);
 
 export default function PipelinePage() {
   const { currentStep, pipelineId, setStep } = usePipelineStore();
-  const { user } = useUser();
+  const { user } = useAuth();
   const contentRef = useRef<HTMLDivElement>(null);
   const prevStepRef = useRef(currentStep);
 
@@ -89,10 +90,10 @@ export default function PipelinePage() {
           <div className="flex items-center gap-2">
             {user && (
               <span className="hidden sm:block text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-                {user.primaryEmailAddress?.emailAddress}
+                {user.email}
               </span>
             )}
-            <UserButton />
+            <UserMenu />
           </div>
         </div>
       </header>

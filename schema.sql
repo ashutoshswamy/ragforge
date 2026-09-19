@@ -1,5 +1,5 @@
--- Run this in your Supabase SQL Editor
--- https://supabase.com/dashboard/project/<your-project>/sql/new
+-- Run this in the Neon SQL Editor (or via psql against DATABASE_URL)
+-- https://console.neon.tech/app/projects/<your-project>/sql-editor
 
 -- 1. Enable pgvector extension
 create extension if not exists vector;
@@ -35,27 +35,5 @@ create index vector_chunks_pipeline_id_idx on public.vector_chunks(pipeline_id);
 create index vector_chunks_embedding_idx on public.vector_chunks
   using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
--- 4. Similarity search RPC function
-create or replace function match_vector_chunks(
-  query_embedding vector(768),
-  match_pipeline_id uuid,
-  match_count int
-)
-returns table (
-  id uuid,
-  text text,
-  source text,
-  similarity float
-)
-language sql stable
-as $$
-  select
-    id,
-    text,
-    source,
-    1 - (embedding <=> query_embedding) as similarity
-  from public.vector_chunks
-  where pipeline_id = match_pipeline_id
-  order by embedding <=> query_embedding
-  limit match_count;
-$$;
+-- Similarity search done inline via `order by embedding <=> $query limit $k`
+-- in lib/vectorstore.ts — no RPC needed, Neon's sql tagged-template runs plain SQL directly.

@@ -1,16 +1,27 @@
 "use client";
 
-import { SignUp } from "@clerk/nextjs";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
-import { useRef } from "react";
+import { GoogleIcon, GithubIcon } from "@/components/ui/AuthIcons";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { establishSession } from "@/lib/auth-context";
 
 gsap.registerPlugin(useGSAP);
 
 export default function SignUpPage() {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useGSAP(() => {
     gsap.from(".auth-item", {
@@ -21,6 +32,37 @@ export default function SignUpPage() {
       ease: "power3.out",
     });
   }, { scope: ref });
+
+  const afterSignUp = async (idToken: string) => {
+    await establishSession(idToken);
+    router.push("/pipelines");
+  };
+
+  const handleGoogleSignUp = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+      await afterSignUp(await cred.user.getIdToken());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign up failed";
+      setError(message);
+      setLoading(false);
+    }
+  };
+
+  const handleGithubSignUp = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const cred = await signInWithPopup(auth, new GithubAuthProvider());
+      await afterSignUp(await cred.user.getIdToken());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign up failed";
+      setError(message);
+      setLoading(false);
+    }
+  };
 
   return (
     <div ref={ref} className="relative flex min-h-screen items-center justify-center noise-bg overflow-hidden">
@@ -72,8 +114,41 @@ export default function SignUpPage() {
           </span>
         </div>
 
-        <div className="auth-item">
-          <SignUp />
+        <div className="auth-item w-full max-w-sm flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={handleGoogleSignUp}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-4 py-3 text-xs uppercase tracking-widest transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontFamily: "var(--font-body)" }}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGithubSignUp}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-4 py-3 text-xs uppercase tracking-widest transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontFamily: "var(--font-body)" }}
+          >
+            <GithubIcon />
+            Continue with GitHub
+          </button>
+
+          {error && (
+            <p className="text-xs text-center" style={{ color: "var(--error)", fontFamily: "var(--font-body)" }}>
+              {error}
+            </p>
+          )}
+
+          <p className="text-center text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
+            Already have an account?{" "}
+            <Link href="/sign-in" style={{ color: "var(--accent)" }}>
+              Sign in
+            </Link>
+          </p>
         </div>
 
         <div className="auth-item flex items-center gap-3 mt-2">

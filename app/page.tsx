@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRef, useEffect } from "react";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-context";
+import UserMenu from "@/components/ui/UserMenu";
 import Logo from "@/components/ui/Logo";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -238,7 +239,8 @@ function FeatureCard({ title, description, metric, metricLabel, icon }: {
 
 /* ─── Main Page ─── */
 export default function HomePage() {
-  const { isSignedIn } = useAuth();
+  const { user } = useAuth();
+  const isSignedIn = !!user;
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const compareRef = useRef<HTMLDivElement>(null);
@@ -251,7 +253,7 @@ export default function HomePage() {
       .from(".hero-subtitle", { opacity: 0, y: 20, duration: 0.5 }, "-=0.25")
       .from(".hero-cta-row", { opacity: 0, y: 16, duration: 0.5 }, "-=0.25")
       .from(".hero-stats", { opacity: 0, y: 12, duration: 0.45 }, "-=0.2")
-      .from(".hero-terminal", { opacity: 0, x: 36, duration: 0.7, ease: "power2.out" }, "-=0.55");
+      .from(".hero-terminal", { opacity: 0, y: 40, duration: 0.7, ease: "power2.out" }, "-=0.35");
   }, { scope: heroRef });
 
   /* Refresh ScrollTrigger after paint — fixes Next.js layout timing */
@@ -335,7 +337,7 @@ export default function HomePage() {
               >
                 My Pipelines
               </Link>
-              <UserButton />
+              <UserMenu />
             </>
           ) : (
             <>
@@ -369,45 +371,43 @@ export default function HomePage() {
       {/* ─── HERO ─── */}
       <section
         ref={heroRef}
-        className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[85vh] px-5 sm:px-8 py-20 sm:py-28 overflow-hidden"
+        className="relative flex flex-col items-center px-5 sm:px-8 pt-20 sm:pt-28 pb-16 sm:pb-20 overflow-hidden"
       >
         {/* Background grid */}
         <div
           className="absolute inset-0 grid-pattern opacity-30 pointer-events-none"
-          style={{ maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)" }}
+          style={{ maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%)" }}
         />
         {/* Accent glow orb */}
         <div
-          className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, var(--accent-glow) 0%, transparent 70%)", filter: "blur(40px)" }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, var(--accent-glow) 0%, transparent 70%)", filter: "blur(50px)" }}
         />
 
-        {/* Left: Copy */}
-        <div className="relative z-10 flex flex-col gap-7">
-          {/* Headline */}
-          <div className="flex flex-col gap-0 overflow-hidden">
-            <h1
-              className="hero-title-line text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.0]"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Chat with your
-            </h1>
-            <h1
-              className="hero-title-line text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.0]"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--accent)" }}
-            >
-              documents
-            </h1>
-            <h1
-              className="hero-title-line text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.0]"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              instantly.
-            </h1>
+        {/* Copy */}
+        <div className="relative z-10 flex flex-col items-center gap-7 text-center max-w-3xl mx-auto">
+          {/* Badge */}
+          <div
+            className="hero-title-line inline-flex items-center gap-2 px-4 py-1.5 rounded-full"
+            style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+          >
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--success)" }} />
+            <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
+              Powered by Gemini
+            </span>
           </div>
 
+          {/* Headline */}
+          <h1
+            className="hero-title-line text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Chat with your documents,{" "}
+            <span style={{ color: "var(--accent)" }}>instantly.</span>
+          </h1>
+
           <p
-            className="hero-subtitle text-sm sm:text-base leading-[1.7] max-w-[420px]"
+            className="hero-subtitle text-sm sm:text-lg leading-[1.7] max-w-xl"
             style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
           >
             Upload PDFs, Word docs, or text files. RAGForge chunks, embeds, and indexes
@@ -415,7 +415,7 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="hero-cta-row flex flex-col sm:flex-row items-start gap-3">
+          <div className="hero-cta-row flex flex-col sm:flex-row items-center gap-3">
             <Link
               href={isSignedIn ? "/pipeline" : "/sign-up"}
               className="group relative inline-flex items-center gap-3 px-7 py-4 text-xs font-medium uppercase tracking-widest transition-all duration-300"
@@ -462,7 +462,7 @@ export default function HomePage() {
             ].map((s, i) => (
               <div
                 key={s.label}
-                className="flex flex-col gap-1 px-5 first:pl-0"
+                className="flex flex-col gap-1 px-6 first:pl-0"
                 style={{ borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}
               >
                 <span className="text-xl font-extrabold tabular-nums leading-none" style={{ color: "var(--accent)", fontFamily: "var(--font-heading)" }}>
@@ -476,8 +476,11 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Right: Terminal */}
-        <div className="hero-terminal relative z-10 hidden lg:block">
+        {/* Terminal preview */}
+        <div
+          className="hero-terminal relative z-10 w-full max-w-3xl mx-auto mt-14 sm:mt-16"
+          style={{ filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.4))" }}
+        >
           <TerminalPreview />
         </div>
       </section>
@@ -626,7 +629,7 @@ export default function HomePage() {
                   ["Vector DB setup", "Hours", "Built-in"],
                   ["Document parsing", "Write your own", "Drag & drop"],
                   ["Embedding pipeline", "Custom code", "Automatic"],
-                  ["Auth & multi-user", "Integrate yourself", "Clerk included"],
+                  ["Auth & multi-user", "Integrate yourself", "Firebase included"],
                   ["Chat with sources", "Build from scratch", "Ready to use"],
                   ["Time to first query", "Days", "Minutes"],
                 ].map(([label, diy, forge], i) => (
@@ -719,6 +722,14 @@ export default function HomePage() {
             {
               href: "https://twitter.com/ashutoshswamy_", label: "Twitter",
               icon: <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />,
+            },
+            {
+              href: "https://linkedin.com/in/ashutoshswamy", label: "LinkedIn",
+              icon: <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />,
+            },
+            {
+              href: "https://ashutoshswamy.in", label: "Portfolio",
+              icon: <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm7.94 9h-3.05a15.6 15.6 0 00-1.36-6.02A8.01 8.01 0 0119.94 11zM12 4.06c.9 1.2 2.02 3.24 2.34 6.94H9.66c.32-3.7 1.44-5.74 2.34-6.94zM9.66 13h4.68c-.32 3.7-1.44 5.74-2.34 6.94-.9-1.2-2.02-3.24-2.34-6.94zM8.47 4.98A15.6 15.6 0 007.11 11H4.06a8.01 8.01 0 014.41-6.02zM4.06 13h3.05a15.6 15.6 0 001.36 6.02A8.01 8.01 0 014.06 13zm11.47 6.02A15.6 15.6 0 0016.89 13h3.05a8.01 8.01 0 01-4.41 6.02z" />,
             },
           ].map((s) => (
             <a

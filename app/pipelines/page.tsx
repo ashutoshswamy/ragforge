@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-context";
+import UserMenu from "@/components/ui/UserMenu";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
@@ -13,7 +14,7 @@ import { useGSAP } from "@gsap/react";
 gsap.registerPlugin(useGSAP);
 
 export default function PipelinesPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const router = useRouter();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,10 +106,10 @@ export default function PipelinesPage() {
           <div className="flex items-center gap-2">
             {user && (
               <span className="hidden sm:block text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-                {user.primaryEmailAddress?.emailAddress}
+                {user.email}
               </span>
             )}
-            <UserButton />
+            <UserMenu />
           </div>
         </div>
       </header>

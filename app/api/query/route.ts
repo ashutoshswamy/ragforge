@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getUserId } from "@/lib/auth-server";
 import { embedText } from "@/lib/gemini";
 import { search } from "@/lib/vectorstore";
 import { queryRAG } from "@/lib/rag";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { QueryRequestSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,12 +27,9 @@ export async function POST(request: Request) {
     const { model, topK, systemPrompt } = config;
 
     // Verify pipeline ownership
-    const { data: pipeline } = await supabase
-      .from("pipelines")
-      .select("id")
-      .eq("id", pipelineId)
-      .eq("user_id", userId)
-      .single();
+    const [pipeline] = await sql`
+      select id from pipelines where id = ${pipelineId} and user_id = ${userId}
+    `;
 
     if (!pipeline) {
       return NextResponse.json(

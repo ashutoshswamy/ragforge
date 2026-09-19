@@ -62,7 +62,7 @@ export default function PrivacyPolicy() {
               1. Information We Collect
             </h2>
             <p>
-              <strong style={{ color: "var(--text)" }}>Account Data:</strong> When you sign up via Clerk, we receive your name, email address, and profile picture. We do not store passwords — authentication is handled entirely by Clerk.
+              <strong style={{ color: "var(--text)" }}>Account Data:</strong> When you sign up via Firebase Authentication, we receive your email address and, if you sign in with Google, your name and profile picture. We do not store passwords — authentication is handled entirely by Firebase.
             </p>
             <p className="mt-2">
               <strong style={{ color: "var(--text)" }}>Documents:</strong> Files you upload (PDF, TXT, DOCX) are processed to extract text, which is then chunked and embedded. Document content is stored in our database to power your RAG pipelines.
@@ -103,7 +103,7 @@ export default function PrivacyPolicy() {
               3. Data Storage & Security
             </h2>
             <p>
-              Pipeline data and embeddings are stored in Supabase with row-level security scoped to your user account. All data is transmitted over HTTPS. We do not sell, rent, or share your personal data or document content with third parties.
+              Pipeline data and embeddings are stored in Neon (Postgres), scoped to your user account. All data is transmitted over HTTPS. We do not sell, rent, or share your personal data or document content with third parties.
             </p>
           </section>
 
@@ -117,9 +117,9 @@ export default function PrivacyPolicy() {
               4. Third-Party Services
             </h2>
             <ul className="list-disc list-inside flex flex-col gap-1.5">
-              <li><strong style={{ color: "var(--text)" }}>Clerk</strong> — authentication and user management</li>
+              <li><strong style={{ color: "var(--text)" }}>Firebase</strong> — authentication and user management</li>
               <li><strong style={{ color: "var(--text)" }}>Google Gemini API</strong> — embeddings and text generation (using your API key)</li>
-              <li><strong style={{ color: "var(--text)" }}>Supabase</strong> — database and vector storage</li>
+              <li><strong style={{ color: "var(--text)" }}>Neon</strong> — database and vector storage</li>
             </ul>
             <p className="mt-2">
               Each third-party service has its own privacy policy governing their handling of data.

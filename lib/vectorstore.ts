@@ -1,19 +1,17 @@
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import type { VectorChunk } from "@/types";
 
 export async function store(
   pipelineId: string,
   chunks: VectorChunk[]
 ): Promise<void> {
-  const rows = chunks.map((chunk) => ({
-    pipeline_id: pipelineId,
-    text: chunk.text,
-    embedding: JSON.stringify(chunk.embedding),
-    source: chunk.source,
-  }));
-
-  const { error } = await supabase.from("vector_chunks").insert(rows);
-  if (error) throw new Error(`Failed to store vectors: ${error.message}`);
+  // ponytail: sequential inserts, one round-trip per chunk. Batch with unnest() if ingest of large docs gets slow.
+  for (const chunk of chunks) {
+    await sql`
+      insert into vector_chunks (pipeline_id, text, embedding, source)
+      values (${pipelineId}, ${chunk.text}, ${JSON.stringify(chunk.embedding)}, ${chunk.source})
+    `;
+  }
 }
 
 export async function search(
@@ -21,15 +19,15 @@ export async function search(
   queryEmbedding: number[],
   topK: number
 ): Promise<VectorChunk[]> {
-  const { data, error } = await supabase.rpc("match_vector_chunks", {
-    query_embedding: JSON.stringify(queryEmbedding),
-    match_pipeline_id: pipelineId,
-    match_count: topK,
-  });
+  const rows = (await sql`
+    select text, source
+    from vector_chunks
+    where pipeline_id = ${pipelineId}
+    order by embedding <=> ${JSON.stringify(queryEmbedding)}
+    limit ${topK}
+  `) as { text: string; source: string }[];
 
-  if (error) throw new Error(`Failed to search vectors: ${error.message}`);
-
-  return (data ?? []).map((row: { text: string; source: string }) => ({
+  return rows.map((row) => ({
     text: row.text,
     embedding: [],
     source: row.source,
@@ -37,10 +35,5 @@ export async function search(
 }
 
 export async function clear(pipelineId: string): Promise<void> {
-  const { error } = await supabase
-    .from("vector_chunks")
-    .delete()
-    .eq("pipeline_id", pipelineId);
-
-  if (error) throw new Error(`Failed to clear vectors: ${error.message}`);
+  await sql`delete from vector_chunks where pipeline_id = ${pipelineId}`;
 }

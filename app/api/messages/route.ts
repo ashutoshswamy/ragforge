@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabase";
+import { getUserId } from "@/lib/auth-server";
+import { sql } from "@/lib/db";
+import { SaveMessagesSchema } from "@/lib/validation";
 
 // GET /api/messages?pipelineId=xxx — load chat history
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,24 +19,20 @@ export async function GET(request: Request) {
     }
 
     // Verify pipeline ownership
-    const { data: pipeline } = await supabase
-      .from("pipelines")
-      .select("id")
-      .eq("id", pipelineId)
-      .eq("user_id", userId)
-      .single();
+    const [pipeline] = await sql`
+      select id from pipelines where id = ${pipelineId} and user_id = ${userId}
+    `;
 
     if (!pipeline) {
       return NextResponse.json({ error: "Pipeline not found" }, { status: 404 });
     }
 
-    const { data, error } = await supabase
-      .from("chat_messages")
-      .select("role, content, sources")
-      .eq("pipeline_id", pipelineId)
-      .order("created_at", { ascending: true });
-
-    if (error) throw new Error(error.message);
+    const data = await sql`
+      select role, content, sources
+      from chat_messages
+      where pipeline_id = ${pipelineId}
+      order by created_at asc
+    `;
 
     return NextResponse.json({ messages: data ?? [] });
   } catch (error) {
@@ -47,38 +44,35 @@ export async function GET(request: Request) {
 // POST /api/messages — save messages (batch)
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { pipelineId, messages } = await request.json();
+    const json = await request.json();
+    const result = SaveMessagesSchema.safeParse(json);
 
-    if (!pipelineId || !Array.isArray(messages) || messages.length === 0) {
+    if (!result.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    const { pipelineId, messages } = result.data;
+
     // Verify pipeline ownership
-    const { data: pipeline } = await supabase
-      .from("pipelines")
-      .select("id")
-      .eq("id", pipelineId)
-      .eq("user_id", userId)
-      .single();
+    const [pipeline] = await sql`
+      select id from pipelines where id = ${pipelineId} and user_id = ${userId}
+    `;
 
     if (!pipeline) {
       return NextResponse.json({ error: "Pipeline not found" }, { status: 404 });
     }
 
-    const rows = messages.map((msg: { role: string; content: string; sources?: string[] }) => ({
-      pipeline_id: pipelineId,
-      role: msg.role,
-      content: msg.content,
-      sources: msg.sources ?? [],
-    }));
-
-    const { error } = await supabase.from("chat_messages").insert(rows);
-    if (error) throw new Error(error.message);
+    for (const msg of messages) {
+      await sql`
+        insert into chat_messages (pipeline_id, role, content, sources)
+        values (${pipelineId}, ${msg.role}, ${msg.content}, ${JSON.stringify(msg.sources ?? [])})
+      `;
+    }
 
     return NextResponse.json({ status: "ok" });
   } catch (error) {

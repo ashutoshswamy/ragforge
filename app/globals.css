@@ -15,8 +15,8 @@
   --text-dim: #4A4A4A;
   --success: #22C55E;
   --error: #EF4444;
-  --font-heading: var(--font-syne);
-  --font-body: var(--font-dm-mono);
+  --font-heading: var(--font-dm-sans);
+  --font-body: var(--font-dm-sans);
 }
 
 @theme inline {
@@ -41,7 +41,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body), "DM Mono", monospace;
+  font-family: var(--font-body), "DM Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -70,7 +70,7 @@ body {
 
 /* ─── Headings ─── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading), "Syne", sans-serif;
+  font-family: var(--font-heading), "DM Sans", sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -192,7 +192,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Inputs ─── */
 input, textarea, select {
-  font-family: var(--font-body), "DM Mono", monospace;
+  font-family: var(--font-body), "DM Sans", sans-serif;
   font-size: 0.875rem;
   background: var(--surface);
   border: 1px solid var(--border);

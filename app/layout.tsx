@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Syne, DM_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
+import { DM_Sans } from "next/font/google";
+import { headers } from "next/headers";
+import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
-const syne = Syne({
-  variable: "--font-syne",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -33,7 +27,7 @@ export const metadata: Metadata = {
     "Vector Database",
     "Embeddings",
     "Document AI",
-    "Supabase",
+    "Neon",
     "Next.js"
   ],
   authors: [{ name: "Ashutosh Swamy", url: "https://ashutoshswamy.in" }],
@@ -90,16 +84,38 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "RAGForge",
+  url: "https://ragforge.ashutoshswamy.in",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Web",
+  description:
+    "Upload documents, configure your pipeline, and chat with your data using Gemini-powered RAG.",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  author: { "@type": "Person", name: "Ashutosh Swamy", url: "https://ashutoshswamy.in" },
+};
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
-    <ClerkProvider afterSignOutUrl="/" signInUrl="/sign-in" signUpUrl="/sign-up" signInFallbackRedirectUrl="/pipelines" signUpFallbackRedirectUrl="/pipelines">
-      <html lang="en" className={`${syne.variable} ${dmMono.variable}`}>
-        <body className="min-h-screen flex flex-col noise-bg">{children}</body>
+    <AuthProvider>
+      <html lang="en" className={dmSans.variable}>
+        <body className="min-h-screen flex flex-col noise-bg">
+          <script
+            type="application/ld+json"
+            nonce={nonce}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          {children}
+        </body>
       </html>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }

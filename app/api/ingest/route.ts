@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getUserId } from "@/lib/auth-server";
 import { chunkText } from "@/lib/chunking";
+import { extractText } from "@/lib/parse";
 import { embedText } from "@/lib/gemini";
 import { store } from "@/lib/vectorstore";
-import { supabase } from "@/lib/supabase";
+import { sql } from "@/lib/db";
 import { IngestRequestSchema } from "@/lib/validation";
 import type { VectorChunk } from "@/types";
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -28,12 +29,9 @@ export async function POST(request: Request) {
     const { chunkSize, chunkOverlap } = config;
 
     // Verify pipeline ownership
-    const { data: pipeline } = await supabase
-      .from("pipelines")
-      .select("id")
-      .eq("id", pipelineId)
-      .eq("user_id", userId)
-      .single();
+    const [pipeline] = await sql`
+      select id from pipelines where id = ${pipelineId} and user_id = ${userId}
+    `;
 
     if (!pipeline) {
       return NextResponse.json(
@@ -45,7 +43,8 @@ export async function POST(request: Request) {
     let totalChunks = 0;
 
     for (const doc of docs) {
-      const chunks = chunkText(doc.text, chunkSize, chunkOverlap);
+      const text = await extractText(doc.name, doc.text);
+      const chunks = chunkText(text, chunkSize, chunkOverlap);
 
       const vectorChunks: VectorChunk[] = [];
       for (const chunk of chunks) {
@@ -62,10 +61,10 @@ export async function POST(request: Request) {
     }
 
     // Update chunk count on pipeline
-    await supabase
-      .from("pipelines")
-      .update({ chunk_count: totalChunks, updated_at: new Date().toISOString() })
-      .eq("id", pipelineId);
+    await sql`
+      update pipelines set chunk_count = ${totalChunks}, updated_at = now()
+      where id = ${pipelineId}
+    `;
 
     return NextResponse.json({ chunks: totalChunks, status: "ok" });
   } catch (error) {
