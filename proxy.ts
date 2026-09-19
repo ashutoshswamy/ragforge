@@ -1,10 +1,12 @@
 import { randomUUID } from "crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { adminAuth } from "@/lib/firebase-admin";
-import { SESSION_COOKIE } from "@/lib/auth-server";
 
 const PROTECTED_PREFIXES = ["/pipeline", "/pipelines"];
 const AUTH_DOMAIN = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+// Duplicated from lib/auth-server.ts on purpose: a static import would pull in
+// lib/firebase-admin.ts (and its required env vars) for every request, not just
+// protected ones. See dynamic import below.
+const SESSION_COOKIE = "session";
 
 function buildCsp(nonce: string): string {
   // style-src needs 'unsafe-inline': the UI is built entirely on inline style={{}} objects,
@@ -42,10 +44,11 @@ export async function proxy(request: NextRequest) {
 
     if (sessionCookie) {
       try {
+        const { adminAuth } = await import("@/lib/firebase-admin");
         await adminAuth.verifySessionCookie(sessionCookie);
         authorized = true;
       } catch {
-        // fall through to redirect
+        // fall through to redirect (covers invalid cookie AND misconfigured firebase-admin)
       }
     }
 
