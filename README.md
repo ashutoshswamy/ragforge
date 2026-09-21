@@ -1,43 +1,27 @@
 # RAGForge
 
-Build and manage production-ready RAG (Retrieval-Augmented Generation) pipelines in minutes. **Upload documents**, **auto-index into Neon**, and **chat with your data** — powered by Google Gemini.
+![RAGForge](public/og-image.png)
+
+Build and manage production-ready RAG (Retrieval-Augmented Generation) pipelines in minutes. Upload documents, auto-index into Neon, and chat with your data — powered by Google Gemini.
 
 ## Features
 
-- **Persistent Pipelines** — Save your RAG configurations and indexed data to Neon. Resume your chat sessions anytime.
-- **Secure Authentication** — Full user lifecycle management powered by Firebase Auth. Each pipeline is scoped to its owner.
-- **Multi-Format Ingest** — Drag & drop support for PDF, DOCX, and TXT files.
-- **Streaming UI** — Real-time responses from Gemini with token-by-token streaming and source attribution chips.
-- **Configurable RAG** — Fine-tune chunk size, overlap, top-K retrieval, model selection, and system prompts.
-- **Vector Search** — High-performance similarity search using Neon `pgvector` with 768-dimensional embeddings.
-- **Dark Industrial UI** — Built with a premium design system featuring Syne + DM Mono typography and Framer Motion animations.
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Framework** | Next.js 16 (App Router) |
-| **Authentication** | Firebase Auth |
-| **Database & Vector Store** | Neon (PostgreSQL + `pgvector`) |
-| **LLM & Embeddings** | Google Gemini (`@google/generative-ai`) |
-| **Styling & Animation** | Tailwind CSS + Framer Motion |
-| **File Parsing** | pdf-parse, mammoth |
-| **State Management** | Zustand |
-
-## How It Works
-
-1. **UPLOAD** → Drop your PDF, TXT, or DOCX files.
-2. **CHUNK** → Documents are split and embedded using Gemini's latest embedding models.
-3. **INDEX** → Chunks are stored in Neon with vector indices for fast retrieval.
-4. **CHAT** → Ask questions; RAGForge retrieves relevant context and streams answers with citations.
+- Persistent pipelines — RAG configurations and indexed data saved to Neon, resume chat sessions anytime
+- Secure authentication — full user lifecycle management via Firebase Auth, pipelines scoped to their owner
+- Multi-format ingest — drag & drop support for PDF, DOCX, and TXT files
+- Streaming UI — real-time responses from Gemini with token-by-token streaming and source attribution chips
+- Configurable RAG — fine-tune chunk size, overlap, top-K retrieval, model selection, and system prompts
+- Vector search — high-performance similarity search using Neon pgvector with 768-dimensional embeddings
 
 ## Author
 
 **Ashutosh Swamy**
+
 - [GitHub](https://github.com/ashutoshswamy)
 - [LinkedIn](https://linkedin.com/in/ashutoshswamy)
-- [Twitter / X](https://twitter.com/ashutoshswamy_)
+- [X](https://x.com/ashutoshswamy_)
+- [Portfolio](https://ashutoshswamy.in)
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+MIT — see [LICENSE](LICENSE) for details.
