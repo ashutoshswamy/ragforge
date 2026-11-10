@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme";
 import ThemedToaster from "@/components/ui/ThemedToaster";
+import CookieConsent from "@/components/ui/CookieConsent";
 import "../globals.css";
 import { dmSans, bricolage, jsonLd } from "@/lib/site";
 
@@ -30,6 +31,7 @@ export default async function RootLayout({
           <ThemeProvider>
             {children}
             <ThemedToaster />
+            <CookieConsent />
           </ThemeProvider>
         </body>
       </html>

@@ -331,6 +331,33 @@ input::placeholder, textarea::placeholder {
   color: var(--text-dim);
 }
 
+/* ─── Checkbox: drawn box, tick is a sibling icon (see AuthCard ConsentBox) ─── */
+input.check {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+input.check:hover {
+  border-color: var(--text-dim);
+}
+input.check:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input.check[aria-invalid="true"] {
+  border-color: var(--error);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--error) 18%, transparent);
+}
+input.check:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* ─── Range: filled track driven by --pct ─── */
 input[type="range"] {
   -webkit-appearance: none;

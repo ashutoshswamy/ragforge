@@ -35,5 +35,22 @@ create index vector_chunks_pipeline_id_idx on public.vector_chunks(pipeline_id);
 create index vector_chunks_embedding_idx on public.vector_chunks
   using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
+-- 4. Consent log (cookies, ToS, Privacy Policy, 18+). See db/migrations/002_add_consents.sql
+create table public.consents (
+  id uuid primary key default gen_random_uuid(),
+  user_id text,
+  anon_id text,
+  kind text not null check (kind in ('cookies', 'terms', 'privacy', 'age_18')),
+  granted boolean not null,
+  detail text,
+  policy_version text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  check (user_id is not null or anon_id is not null)
+);
+
+create index consents_user_id_idx on public.consents(user_id);
+create index consents_anon_id_idx on public.consents(anon_id);
+
 -- Similarity search done inline via `order by embedding <=> $query limit $k`
 -- in lib/vectorstore.ts — no RPC needed, Neon's sql tagged-template runs plain SQL directly.
