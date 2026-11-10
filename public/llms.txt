@@ -1,0 +1,9 @@
+# RAGForge
+
+> Free web app to build a RAG (Retrieval-Augmented Generation) pipeline: upload PDF, DOCX or TXT files, configure chunking and retrieval, then chat with cited answers streamed from Google Gemini. Bring your own Gemini API key.
+
+- [Home](https://ragforge.ashutoshswamy.in/): overview, features, how it works
+- [Privacy](https://ragforge.ashutoshswamy.in/privacy): data handling, API key is never stored
+- [Terms](https://ragforge.ashutoshswamy.in/terms): terms of service
+
+Built by [Ashutosh Swamy](https://ashutoshswamy.in).

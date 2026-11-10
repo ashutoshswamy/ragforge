@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    :root { --bg: #0e7490; --fg: #ffffff; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #5ccfe6; --fg: #031519; } }
+  </style>
+  <rect width="32" height="32" rx="10" fill="var(--bg)"/>
+  <g transform="translate(16 16) translate(-12 -12)"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" fill="var(--fg)" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/></g>
+</svg>

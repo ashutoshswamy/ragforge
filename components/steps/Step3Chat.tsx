@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { sileo } from "sileo";
+import { ArrowUp, KeyRound, MessageSquareText, Plus } from "lucide-react";
 import { usePipelineStore } from "@/store/pipeline";
 import ChatBubble from "@/components/ui/ChatBubble";
 import type { ChatMessage } from "@/types";
@@ -13,12 +15,12 @@ async function saveMessages(pipelineId: string, messages: ChatMessage[]) {
       body: JSON.stringify({ pipelineId, messages }),
     });
   } catch {
-    // ponytail: silent fail — chat works without persistence
+    sileo.warning({ title: "Not saved", description: "This chat will not appear in your history." });
   }
 }
 
 export default function Step3Chat() {
-  const { messages, addMessage, config, setConfig, pipelineId, reset } = usePipelineStore();
+  const { messages, addMessage, config, setConfig, pipelineId, pipelineName, reset } = usePipelineStore();
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -109,7 +111,11 @@ export default function Step3Chat() {
       if (pipelineId) saveMessages(pipelineId, [userMsg, assistantMsg!]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      addMessage({ role: "assistant", content: `Error: ${message}`, sources: [] });
+      usePipelineStore.setState((state) => {
+        const last = state.messages[state.messages.length - 1];
+        return last?.role === "assistant" && !last.content ? { messages: state.messages.slice(0, -1) } : {};
+      });
+      sileo.error({ title: "Answer failed", description: message });
     } finally {
       setIsStreaming(false);
     }
@@ -119,139 +125,122 @@ export default function Step3Chat() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
+  const connect = () => {
+    const key = apiKeyInput.trim();
+    if (!key) return;
+    setConfig({ apiKey: key });
+    sileo.success({ title: "Connected", description: "You can chat with this pipeline now." });
+  };
+
+  const handleReset = () => {
+    reset();
+    sileo.info({ title: "New pipeline", description: "Upload documents to start again." });
+  };
+
+  const lastMsg = messages[messages.length - 1];
+  const waiting = isStreaming && lastMsg?.role === "user";
+
   return (
     <div
-      className="flex flex-col w-full max-w-2xl mx-auto rounded overflow-hidden h-[calc(100dvh-240px)] sm:h-[calc(100dvh-210px)] lg:h-[calc(100dvh-180px)]"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)", minHeight: "320px" }}
+      className="card flex flex-col w-full max-w-3xl mx-auto overflow-hidden h-[calc(100dvh-220px)] sm:h-[calc(100dvh-200px)]"
+      style={{ minHeight: 420 }}
     >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3"
-        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full" style={{ background: "var(--success)" }} />
-          <span className="text-xs uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-            Pipeline Active
-          </span>
+      <div className="flex items-center justify-between gap-3 px-5 sm:px-6 h-16 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="min-w-0">
+          <p className="text-base font-bold truncate" style={{ fontFamily: "var(--font-heading)" }}>
+            {pipelineName || "Your pipeline"}
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Ready to answer from your documents</p>
         </div>
-        <button
-          onClick={reset}
-          className="px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors duration-200 cursor-pointer flex items-center gap-1.5"
-          style={{ color: "var(--text-muted)", border: "1px solid var(--border)", fontFamily: "var(--font-body)", background: "transparent" }}
-          onMouseEnter={(e) => { (e.currentTarget).style.borderColor = "var(--accent-dim)"; (e.currentTarget).style.color = "var(--accent)"; }}
-          onMouseLeave={(e) => { (e.currentTarget).style.borderColor = "var(--border)"; (e.currentTarget).style.color = "var(--text-muted)"; }}
-        >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          New Pipeline
+        <button onClick={handleReset} className="btn btn-ghost btn-sm shrink-0">
+          <Plus size={16} /> New
         </button>
       </div>
 
-      {/* API Key prompt */}
-      {needsApiKey && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6">
-          <div className="flex flex-col items-center gap-2">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: "var(--accent)" }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-            </svg>
-            <p className="text-sm font-bold tracking-wide" style={{ fontFamily: "var(--font-heading)" }}>
-              API Key Required
-            </p>
-            <p className="text-xs text-center max-w-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-              Your Gemini API key is never stored. Enter it to resume chatting with this pipeline.
+      {needsApiKey ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6 text-center">
+          <span className="flex items-center justify-center w-14 h-14" style={{ background: "var(--accent-dim)", color: "var(--accent-text)", borderRadius: 18 }}>
+            <KeyRound size={26} strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-2xl">Add your API key</h2>
+            <p className="text-sm mt-2 max-w-sm" style={{ color: "var(--text-muted)" }}>
+              Your Gemini key is never stored. Paste it to keep chatting with this pipeline.
             </p>
           </div>
-          <div className="flex items-center gap-2 w-full max-w-sm">
+          <div className="flex flex-col sm:flex-row items-stretch gap-2 w-full max-w-md">
             <input
               type="password"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && apiKeyInput.trim()) setConfig({ apiKey: apiKeyInput.trim() }); }}
-              placeholder="Enter Gemini API key"
-              className="flex-1 px-3 py-2 text-sm rounded-none outline-none"
-              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)", fontFamily: "var(--font-body)" }}
+              onKeyDown={(e) => { if (e.key === "Enter") connect(); }}
+              placeholder="Paste your key"
+              aria-label="Gemini API key"
+              className="sm:flex-1 px-4 h-12"
               autoFocus
+              autoComplete="off"
             />
-            <button
-              onClick={() => { if (apiKeyInput.trim()) setConfig({ apiKey: apiKeyInput.trim() }); }}
-              disabled={!apiKeyInput.trim()}
-              className="px-4 py-2 text-xs uppercase tracking-widest transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed"
-              style={{
-                background: apiKeyInput.trim() ? "var(--accent)" : "var(--border)",
-                color: apiKeyInput.trim() ? "var(--bg)" : "var(--text-dim)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <button onClick={connect} disabled={!apiKeyInput.trim()} className="btn btn-primary h-12">
               Connect
             </button>
           </div>
         </div>
-      )}
-
-      {/* Messages */}
-      {!needsApiKey && (
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col gap-3 sm:gap-4">
-          {messages.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 opacity-50">
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: "var(--text-dim)" }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <p className="text-xs" style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}>
-                Ask a question about your documents
-              </p>
-            </div>
-          )}
-          {messages.map((msg, i) => <ChatBubble key={i} message={msg} />)}
-          <div ref={messagesEndRef} />
-        </div>
-      )}
-
-      {/* Input */}
-      {!needsApiKey && (
-        <div
-          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3"
-          style={{ borderTop: "1px solid var(--border)", background: "var(--bg)" }}
-        >
-          <span
-            className="text-xs flex-shrink-0"
-            style={{ color: isStreaming ? "var(--text-dim)" : "var(--accent)", fontFamily: "var(--font-body)" }}
-          >
-            &gt;
-          </span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isStreaming ? "Generating response..." : "Ask a question..."}
-            disabled={isStreaming}
-            className="flex-1 py-2 px-0 text-sm bg-transparent border-none outline-none"
-            style={{ color: "var(--text)", fontFamily: "var(--font-body)", background: "transparent" }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={isStreaming || !input.trim()}
-            className="flex-shrink-0 p-2 rounded transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
-            style={{
-              background: isStreaming || !input.trim() ? "transparent" : "var(--accent)",
-              color: isStreaming || !input.trim() ? "var(--text-dim)" : "var(--bg)",
-            }}
-          >
-            {isStreaming ? (
-              <div
-                className="w-4 h-4 rounded-full border-2"
-                style={{ borderColor: "var(--text-dim)", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }}
-              />
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-6 flex flex-col gap-6">
+            {messages.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center">
+                <span className="flex items-center justify-center w-14 h-14" style={{ background: "var(--accent-dim)", color: "var(--accent-text)", borderRadius: 18 }}>
+                  <MessageSquareText size={26} strokeWidth={1.8} />
+                </span>
+                <div>
+                  <h2 className="text-2xl">Ask your first question</h2>
+                  <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>Answers cite the files they came from.</p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {["Summarize these documents", "What are the key points?", "List any dates or deadlines"].map((q) => (
+                    <button key={q} onClick={() => { setInput(q); inputRef.current?.focus(); }} className="btn btn-ghost btn-sm">
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-              </svg>
+              messages.map((msg, i) => (
+                <ChatBubble key={i} message={msg} pending={isStreaming && i === messages.length - 1} />
+              ))
             )}
-          </button>
-        </div>
+            {waiting && <ChatBubble message={{ role: "assistant", content: "" }} pending />}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="p-3 sm:p-4 shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
+            <div
+              className="flex items-center gap-2 pl-5 pr-2 h-14 border border-[var(--border-active)] transition-[box-shadow,border-color] duration-200 focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_4px_var(--accent-glow)]"
+              style={{ background: "var(--surface)", borderRadius: 999 }}
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isStreaming ? "Generating an answer" : "Ask about your documents"}
+                aria-label="Your question"
+                disabled={isStreaming}
+                className="flex-1 min-w-0 h-full !border-0 !shadow-none !bg-transparent px-0"
+              />
+              <button
+                onClick={handleSend}
+                disabled={isStreaming || !input.trim()}
+                className="btn btn-primary btn-icon !w-10 !h-10"
+                aria-label="Send"
+              >
+                {isStreaming ? <span className="spinner" /> : <ArrowUp size={18} strokeWidth={2.6} />}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

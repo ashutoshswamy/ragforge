@@ -3,7 +3,7 @@ import type { PipelineConfig, ParsedDoc, VectorChunk, ChatMessage } from "@/type
 
 const DEFAULT_CONFIG: PipelineConfig = {
   apiKey: "",
-  model: "gemini-3-flash-preview",
+  model: "gemini-3.6-flash",
   chunkSize: 512,
   chunkOverlap: 64,
   topK: 4,

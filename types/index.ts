@@ -1,4 +1,4 @@
-export type GeminiModel = "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.5-flash" | "gemini-3.5-flash-lite";
+export type GeminiModel = "gemini-3.1-flash-lite" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.8-flash";
 
 export interface Pipeline {
   id: string;

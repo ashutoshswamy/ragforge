@@ -1,23 +1,93 @@
 @import "tailwindcss";
 
+/*
+  RAGForge design tokens.
+  Shape rule: buttons + chips are pills, inputs 14px, cards 24px, inner tiles 16px.
+  One accent (cyan). Light/dark: <html data-mode="light|dark">, absent = follow system.
+  Every accent token is derived from the four --brand values below.
+*/
 :root {
-  --bg: #0E0E0E;
-  --surface: #1A1A1A;
-  --surface-elevated: #222222;
-  --border: #2A2A2A;
-  --border-active: #3A3A3A;
-  --accent: #F5820A;
-  --accent-dim: #7A3E05;
-  --accent-glow: rgba(245, 130, 10, 0.15);
-  --accent-glow-strong: rgba(245, 130, 10, 0.3);
-  --text: #E8E8E8;
-  --text-muted: #6B6B6B;
-  --text-dim: #4A4A4A;
-  --success: #22C55E;
-  --error: #EF4444;
-  --font-heading: var(--font-dm-sans);
+  /* Palette: emerald (default) */
+  --brand: #0e7490;
+  --brand-ink: #ffffff;
+  --brand-dark: #5ccfe6;
+  --brand-ink-dark: #031519;
+
+  --bg: #f4f7f9;
+  --surface: #ffffff;
+  --surface-elevated: #ebf0f3;
+  --border: #dce3e8;
+  --border-active: #bfc9d0;
+  --text: #0b1519;
+  --text-muted: #4a5a63;
+  --text-dim: #62727b;
+  --success: #0f7d58;
+  --error: #c42f29;
+  --shadow: 0 1px 2px rgba(11, 26, 34, 0.05), 0 12px 32px -12px rgba(11, 26, 34, 0.14);
+  --shadow-lift: 0 2px 4px rgba(11, 26, 34, 0.06), 0 24px 48px -16px rgba(11, 26, 34, 0.22);
+
+  --accent: var(--brand);
+  --accent-ink: var(--brand-ink);
+  --accent-text: color-mix(in srgb, var(--brand) 82%, black);
+  --accent-dim: color-mix(in srgb, var(--brand) 11%, var(--surface));
+  --accent-glow: color-mix(in srgb, var(--brand) 13%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--brand) 30%, transparent);
+
+  --r-card: 24px;
+  --r-tile: 16px;
+  --r-input: 14px;
+  --font-heading: var(--font-bricolage);
   --font-body: var(--font-dm-sans);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
 }
+
+/* Dark neutrals + dark-mode accent derivation. Declared twice: system preference and explicit choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) {
+    --bg: #090e11;
+    --surface: #111820;
+    --surface-elevated: #18212a;
+    --border: #212c36;
+    --border-active: #323f4c;
+    --text: #eaf1f4;
+    --text-muted: #9fb0ba;
+    --text-dim: #86979f;
+    --success: #4dd6a2;
+    --error: #ff7b73;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+    --accent: var(--brand-dark);
+    --accent-ink: var(--brand-ink-dark);
+    --accent-text: color-mix(in srgb, var(--brand-dark) 85%, white);
+    --accent-dim: color-mix(in srgb, var(--brand-dark) 16%, var(--surface));
+    --accent-glow: color-mix(in srgb, var(--brand-dark) 15%, transparent);
+    --accent-glow-strong: color-mix(in srgb, var(--brand-dark) 34%, transparent);
+    color-scheme: dark;
+  }
+}
+:root[data-mode="dark"] {
+  --bg: #090e11;
+  --surface: #111820;
+  --surface-elevated: #18212a;
+  --border: #212c36;
+  --border-active: #323f4c;
+  --text: #eaf1f4;
+  --text-muted: #9fb0ba;
+  --text-dim: #86979f;
+  --success: #4dd6a2;
+  --error: #ff7b73;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+  --accent: var(--brand-dark);
+  --accent-ink: var(--brand-ink-dark);
+  --accent-text: color-mix(in srgb, var(--brand-dark) 85%, white);
+  --accent-dim: color-mix(in srgb, var(--brand-dark) 16%, var(--surface));
+  --accent-glow: color-mix(in srgb, var(--brand-dark) 15%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--brand-dark) 34%, transparent);
+  color-scheme: dark;
+}
+
 
 @theme inline {
   --color-bg: var(--bg);
@@ -36,268 +106,358 @@ html {
   background: var(--bg);
   color: var(--text);
   scroll-behavior: smooth;
+  scroll-padding-top: 88px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body), "DM Sans", sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  caret-color: var(--accent);
 }
 
-/* ─── Scrollbar ─── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+/* Layered so component classes (.btn-primary etc.) can set link colour. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
-/* ─── Selection ─── */
 ::selection {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--accent-ink);
 }
 
-/* ─── Headings ─── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-active);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading), "DM Sans", sans-serif;
+  font-family: var(--font-heading), system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
   color: var(--text);
+  text-wrap: balance;
 }
 
-/* ─── Noise overlay for depth ─── */
-.noise-bg::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 256px;
+p {
+  text-wrap: pretty;
 }
 
-/* ─── Grid pattern for surfaces ─── */
-.grid-pattern {
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-position: center center;
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-/* ─── Scanline effect ─── */
-.scanlines::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
-  );
-  z-index: 1;
+/* ─── Page wash: one soft accent glow, no texture ─── */
+.wash {
+  background:
+    radial-gradient(60% 50% at 85% -10%, var(--accent-glow) 0%, transparent 70%),
+    radial-gradient(50% 40% at 0% 0%, var(--accent-glow) 0%, transparent 70%);
 }
 
-/* ─── Glow effects ─── */
-.accent-glow {
-  box-shadow: 0 0 20px var(--accent-glow), 0 0 60px var(--accent-glow);
-}
-
-.accent-glow-strong {
-  box-shadow: 0 0 30px var(--accent-glow-strong), 0 0 80px var(--accent-glow);
-}
-
-/* ─── Terminal cursor blink ─── */
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-.cursor-blink::after {
-  content: "█";
-  animation: blink 1s step-end infinite;
-  color: var(--accent);
-  margin-left: 2px;
-}
-
-/* ─── Typing animation ─── */
-@keyframes typewriter {
-  from { width: 0; }
-  to { width: 100%; }
-}
-
-/* ─── Spin ─── */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* ─── Scan pulse (auth pages) ─── */
-@keyframes scan-pulse {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 0.15; }
-}
-
-/* ─── Dropdown fade-in ─── */
-@keyframes dropdown-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ─── Terminal line fade-in ─── */
-@keyframes term-fade {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.animate-term-line {
-  animation: term-fade 0.2s ease-out both;
-}
-
-/* ─── Pulse ring ─── */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.8;
+@layer components {
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 24px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      transform 0.25s var(--ease),
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s,
+      box-shadow 0.25s var(--ease);
   }
-  100% {
-    transform: scale(1.4);
-    opacity: 0;
+  .btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
   }
-}
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 20px -8px var(--accent-glow-strong);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 14px 28px -8px var(--accent-glow-strong);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--border-active);
+    background: var(--surface-elevated);
+  }
+  .btn-danger:hover:not(:disabled) {
+    color: var(--error);
+    border-color: var(--error);
+  }
+  .btn-sm {
+    height: 38px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  .btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+  }
 
-.pulse-ring::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border: 2px solid var(--accent);
-  border-radius: inherit;
-  animation: pulse-ring 2s ease-out infinite;
+  /* ─── Surfaces ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow);
+  }
+  .tile {
+    background: var(--surface-elevated);
+    border-radius: var(--r-tile);
+  }
+
+  /* ─── Form ─── */
+  .label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .hint {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* ─── Chips ─── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent-text);
+    font-size: 13px;
+    font-weight: 500;
+    max-width: 100%;
+  }
+
+  /* ─── Nav link ─── */
+  .navlink {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+  /* Touch devices: links need a 44px hit area even when the text is small. */
+  @media (pointer: coarse) {
+    .navlink {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+  }
+  .navlink:hover {
+    color: var(--text);
+  }
 }
 
 /* ─── Inputs ─── */
 input, textarea, select {
-  font-family: var(--font-body), "DM Sans", sans-serif;
-  font-size: 0.875rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 15px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-active);
   color: var(--text);
-  border-radius: 4px;
+  border-radius: var(--r-input);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-dim);
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
-
+/* Fields already show their own focus state (border + glow, or the wrapper's focus-within ring).
+   The global outline would draw a second box on top, so fields opt out. Range keeps its own below. */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
+}
+input:disabled, textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 input::placeholder, textarea::placeholder {
   color: var(--text-dim);
 }
 
-/* ─── Range slider ─── */
+/* ─── Range: filled track driven by --pct ─── */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
-  background: var(--border);
+  height: 6px;
+  padding: 0;
   border: none;
-  border-radius: 2px;
-  outline: none;
+  border-radius: 999px;
   cursor: pointer;
+  background: linear-gradient(to right, var(--accent) var(--pct, 50%), var(--border) var(--pct, 50%));
 }
-
+input[type="range"]:focus {
+  box-shadow: none;
+}
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--accent);
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 2px solid var(--bg);
-  cursor: pointer;
-  box-shadow: 0 0 8px var(--accent-glow);
-  transition: transform 0.15s, box-shadow 0.15s;
+  background: var(--surface);
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(18, 26, 60, 0.25);
+  transition: transform 0.2s var(--ease);
 }
-
-@media (min-width: 640px) {
-  input[type="range"]::-webkit-slider-thumb {
-    width: 16px;
-    height: 16px;
-  }
-}
-
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 16px var(--accent-glow-strong);
+  transform: scale(1.15);
 }
-
 input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--accent);
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid var(--bg);
-  cursor: pointer;
+  background: var(--surface);
+  border: 3px solid var(--accent);
 }
 
-@media (min-width: 640px) {
-  input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-/* ─── Mobile touch targets ─── */
 @media (max-width: 639px) {
   input, textarea, select {
-    font-size: 1rem; /* Prevents iOS zoom on focus */
-    padding: 0.75rem;
-  }
-
-  button {
-    min-height: 44px; /* Apple HIG touch target */
+    font-size: 16px; /* stops iOS zoom on focus */
   }
 }
 
-/* ─── Corner accents for containers ─── */
-.corner-accents {
-  position: relative;
+/* ─── Motion: one entrance, one reveal, nothing looping except loaders ─── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
-.corner-accents::before,
-.corner-accents::after {
+.rise {
+  animation: rise 0.9s var(--ease) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.caret::after {
   content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-color: var(--accent-dim);
-  border-style: solid;
-  pointer-events: none;
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--accent);
+  animation: blink 1s step-end infinite;
 }
-.corner-accents::before {
-  top: -1px;
-  left: -1px;
-  border-width: 2px 0 0 2px;
+
+@keyframes dots {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
 }
-.corner-accents::after {
-  bottom: -1px;
-  right: -1px;
-  border-width: 0 2px 2px 0;
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  animation: dots 1.2s infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-elevated) 25%, var(--border) 50%, var(--surface-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: var(--r-tile);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise, .reveal { animation: none; opacity: 1; transform: none; transition: none; filter: none; }
+  .rail { transition: none !important; transform: none !important; }
+  .spinner, .caret::after, .typing-dot, .skeleton { animation: none; }
+  .btn, .btn:hover, .btn:active { transition: none; transform: none; }
 }

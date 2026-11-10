@@ -1,10 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-
-gsap.registerPlugin(useGSAP);
+import { X } from "lucide-react";
 
 interface FileCardProps {
   name: string;
@@ -18,7 +14,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getFileIcon(name: string) {
+function getExt(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
   if (ext === "pdf") return "PDF";
   if (ext === "docx" || ext === "doc") return "DOC";
@@ -26,44 +22,32 @@ function getFileIcon(name: string) {
 }
 
 export default function FileCard({ name, size, onRemove }: FileCardProps) {
-  const ext = getFileIcon(name);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useGSAP(() => {
-    gsap.from(ref.current, { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.out" });
-  }, { scope: ref });
-
   return (
     <div
-      ref={ref}
-      className="flex items-center gap-3 px-4 py-3 rounded corner-accents"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+      className="rise flex items-center gap-4 px-4 py-3 card"
+      style={{ borderRadius: "var(--r-tile)", boxShadow: "none" }}
     >
       <div
-        className="flex items-center justify-center w-10 h-10 rounded text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
-        style={{ background: "var(--accent-dim)", color: "var(--accent)", fontFamily: "var(--font-body)" }}
+        className="flex items-center justify-center w-11 h-11 text-xs font-bold shrink-0"
+        style={{
+          background: "var(--accent-dim)",
+          color: "var(--accent-text)",
+          borderRadius: 12,
+          fontFamily: "var(--font-heading)",
+        }}
       >
-        {ext}
+        {getExt(name)}
       </div>
-
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: "var(--text)", fontFamily: "var(--font-body)" }}>
-          {name}
-        </p>
-        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-          {formatSize(size)}
-        </p>
+        <p className="text-sm font-medium truncate">{name}</p>
+        <p className="text-xs tabular" style={{ color: "var(--text-muted)" }}>{formatSize(size)}</p>
       </div>
-
       <button
         onClick={onRemove}
-        className="flex-shrink-0 p-1.5 rounded transition-opacity duration-200 hover:opacity-60 cursor-pointer"
-        style={{ color: "var(--text-muted)" }}
+        className="btn btn-ghost btn-icon shrink-0"
         aria-label={`Remove ${name}`}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X size={16} />
       </button>
     </div>
   );

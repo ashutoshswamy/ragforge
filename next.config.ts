@@ -12,6 +12,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // pdfjs-dist loads its worker file by path at runtime. Bundling it breaks that lookup
+  // ("Setting up fake worker failed"), so let Node require these directly.
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

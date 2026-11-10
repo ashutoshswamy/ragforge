@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function UserMenu() {
@@ -9,11 +10,18 @@ export default function UserMenu() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function onDown(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
   if (!user) return null;
@@ -24,12 +32,15 @@ export default function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer overflow-hidden"
-        style={{ background: "var(--accent-dim)", color: "var(--accent)", fontFamily: "var(--font-body)" }}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold cursor-pointer overflow-hidden transition-transform duration-200 hover:scale-105"
+        style={{ background: "var(--accent-dim)", color: "var(--accent-text)", border: "1px solid var(--border)" }}
       >
         {user.photoURL ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+          <img src={user.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
         ) : (
           initial
         )}
@@ -37,22 +48,21 @@ export default function UserMenu() {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-48 z-50 rounded overflow-hidden"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)", animation: "dropdown-in 0.15s ease-out both" }}
+          role="menu"
+          className="card absolute right-0 top-full mt-3 w-64 overflow-hidden p-1.5"
+          style={{ animation: "dropdown-in 0.18s var(--ease) both", boxShadow: "var(--shadow-lift)", borderRadius: "var(--r-tile)" }}
         >
-          <div
-            className="px-3 py-2 text-[10px] truncate"
-            style={{ color: "var(--text-muted)", borderBottom: "1px solid var(--border)", fontFamily: "var(--font-body)" }}
-          >
-            {user.email}
+          <div className="px-3 py-2.5">
+            <p className="text-xs" style={{ color: "var(--text-dim)" }}>Signed in as</p>
+            <p className="text-sm font-medium truncate">{user.email}</p>
           </div>
           <button
+            role="menuitem"
             onClick={signOut}
-            className="w-full text-left px-3 py-2 text-xs cursor-pointer transition-colors duration-150"
-            style={{ color: "var(--error)", fontFamily: "var(--font-body)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-sm font-medium cursor-pointer rounded-xl transition-colors duration-150 hover:bg-[var(--surface-elevated)]"
+            style={{ color: "var(--error)" }}
           >
+            <LogOut size={16} />
             Sign out
           </button>
         </div>

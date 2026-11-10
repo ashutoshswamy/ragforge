@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import Logo from "@/components/ui/Logo";
+import SiteHeader from "@/components/ui/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -13,50 +12,31 @@ export const metadata: Metadata = {
 export default function TermsOfService() {
   return (
     <div className="relative flex flex-col min-h-screen">
-      <div className="fixed inset-0 grid-pattern opacity-[0.04] pointer-events-none z-0" />
 
-      {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-5 sm:px-8 py-3"
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "rgba(14, 14, 14, 0.85)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo size="sm" />
-          <span
-            className="text-base font-bold tracking-tight"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            RAG<span style={{ color: "var(--accent)" }}>Forge</span>
-          </span>
-        </Link>
-      </nav>
+      <SiteHeader maxWidth="max-w-3xl" />
 
       {/* Content */}
       <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-5 sm:px-8 py-16 sm:py-24">
         <h1
-          className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2"
+          className="text-5xl sm:text-6xl mb-3"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           Terms of Service
         </h1>
         <p
-          className="text-xs uppercase tracking-widest mb-12"
+          className="text-sm mb-14"
           style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
         >
           Last updated: April 16, 2026
         </p>
 
         <div
-          className="flex flex-col gap-8 text-sm leading-relaxed"
+          className="flex flex-col gap-8 text-base leading-relaxed"
           style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}
         >
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               1. Acceptance of Terms
@@ -70,7 +50,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               2. Description of Service
@@ -84,7 +64,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               3. User Accounts
@@ -101,7 +81,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               4. Acceptable Use
@@ -121,7 +101,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               5. Your Content
@@ -138,7 +118,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               6. API Keys
@@ -152,7 +132,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               7. Disclaimer of Warranties
@@ -166,7 +146,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               8. Limitation of Liability
@@ -180,7 +160,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               9. Termination
@@ -194,7 +174,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               10. Changes to Terms
@@ -208,7 +188,7 @@ export default function TermsOfService() {
 
           <section>
             <h2
-              className="text-base font-bold uppercase tracking-wider mb-3"
+              className="text-2xl mb-3"
               style={{ color: "var(--text)", fontFamily: "var(--font-heading)" }}
             >
               11. Contact
@@ -229,7 +209,7 @@ export default function TermsOfService() {
         style={{ borderTop: "1px solid var(--border)" }}
       >
         <span
-          className="text-[10px] uppercase tracking-widest"
+          className="text-sm"
           style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
         >
           &copy; {new Date().getFullYear()} RAGForge

@@ -23,7 +23,7 @@ export const QueryRequestSchema = z.object({
   apiKey: z.string().min(1),
   question: z.string().min(1).max(5000),
   config: z.object({
-    model: z.enum(["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.5-flash-lite"]),
+    model: z.enum(["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]),
     topK: z.number().int().min(1).max(10),
     systemPrompt: z.string().max(2000),
   }),
@@ -47,7 +47,7 @@ export const CreatePipelineSchema = z.object({
   name: z.string().min(1).max(128).default("Untitled Pipeline"),
   config: z.object({
     apiKey: z.string().min(1),
-    model: z.enum(["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.5-flash-lite"]),
+    model: z.enum(["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]),
     chunkSize: z.number().int().min(256).max(2048),
     chunkOverlap: z.number().int().min(0).max(256),
     topK: z.number().int().min(1).max(10),

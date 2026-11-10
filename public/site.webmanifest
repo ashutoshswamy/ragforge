@@ -1,5 +1,5 @@
 {
-  "name": "RAGForge — Build Your RAG Pipeline",
+  "name": "RAGForge | Build Your RAG Pipeline",
   "short_name": "RAGForge",
   "description": "Upload documents, configure your pipeline, and chat with your data using Gemini-powered RAG.",
   "icons": [
@@ -14,8 +14,8 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#0e0e0e",
-  "background_color": "#0e0e0e",
+  "theme_color": "#0e7490",
+  "background_color": "#f4f7f9",
   "display": "standalone",
   "start_url": "/"
 }

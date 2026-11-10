@@ -1,10 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-
-gsap.registerPlugin(useGSAP);
+import { Check } from "lucide-react";
 
 interface StepperProps {
   currentStep: 1 | 2 | 3;
@@ -18,81 +14,47 @@ const STEPS = [
 ] as const;
 
 export default function Stepper({ currentStep, onStepClick }: StepperProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const pulseRef = useRef<gsap.core.Tween | null>(null);
-
-  /* Pulse active step circle */
-  useGSAP(() => {
-    pulseRef.current?.kill();
-    const activeEl = ref.current?.querySelector(`.step-circle-${currentStep}`) as HTMLElement | null;
-    if (!activeEl) return;
-
-    pulseRef.current = gsap.to(activeEl, {
-      boxShadow: "0 0 20px rgba(245,130,10,0.5)",
-      repeat: -1,
-      yoyo: true,
-      duration: 1.2,
-      ease: "sine.inOut",
-    });
-
-    return () => { pulseRef.current?.kill(); };
-  }, { scope: ref, dependencies: [currentStep] });
-
   return (
-    <div ref={ref} className="flex items-center justify-center gap-0 w-full max-w-md mx-auto">
+    <ol className="flex items-center w-full max-w-md mx-auto" aria-label="Progress">
       {STEPS.map((step, i) => {
-        const isActive = step.num === currentStep;
-        const isCompleted = step.num < currentStep;
-
+        const active = step.num === currentStep;
+        const done = step.num < currentStep;
         return (
-          <div key={step.num} className="flex items-center flex-1 last:flex-none">
-            <div
-              className={`flex flex-col items-center gap-2 ${isCompleted || isActive ? "cursor-pointer" : ""}`}
-              onClick={() => { if ((isCompleted || isActive) && onStepClick) onStepClick(step.num); }}
+          <li key={step.num} className="flex items-center flex-1 last:flex-none">
+            <button
+              type="button"
+              disabled={!done}
+              onClick={() => onStepClick?.(step.num)}
+              aria-current={active ? "step" : undefined}
+              className="flex items-center gap-2.5 disabled:cursor-default cursor-pointer"
             >
-              {/* Step circle */}
-              <div
-                className={`step-circle-${step.num} flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-[10px] sm:text-xs font-medium transition-colors duration-300`}
+              <span
+                className="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-all duration-300"
                 style={{
-                  background: isActive ? "var(--accent)" : isCompleted ? "var(--accent-dim)" : "var(--surface)",
-                  color: isActive ? "var(--bg)" : isCompleted ? "var(--accent)" : "var(--text-muted)",
-                  border: `1px solid ${isActive ? "var(--accent)" : isCompleted ? "var(--accent-dim)" : "var(--border)"}`,
-                  fontFamily: "var(--font-body)",
+                  background: active ? "var(--accent)" : done ? "var(--accent-dim)" : "var(--surface)",
+                  color: active ? "var(--accent-ink)" : done ? "var(--accent-text)" : "var(--text-dim)",
+                  border: `1px solid ${active ? "var(--accent)" : done ? "transparent" : "var(--border-active)"}`,
+                  boxShadow: active ? "0 0 0 5px var(--accent-glow)" : "none",
                 }}
               >
-                {isCompleted ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  `0${step.num}`
-                )}
-              </div>
-
-              {/* Label */}
+                {done ? <Check size={16} strokeWidth={2.6} /> : step.num}
+              </span>
               <span
-                className="text-[10px] uppercase tracking-widest transition-colors duration-300"
-                style={{
-                  color: isActive ? "var(--accent)" : isCompleted ? "var(--text-muted)" : "var(--text-dim)",
-                  fontFamily: "var(--font-body)",
-                }}
+                className="hidden sm:inline text-sm font-medium transition-colors duration-300"
+                style={{ color: active ? "var(--text)" : "var(--text-muted)" }}
               >
                 {step.label}
               </span>
-            </div>
-
-            {/* Connector */}
+            </button>
             {i < STEPS.length - 1 && (
-              <div
-                className="flex-1 h-px mx-2 sm:mx-4 mt-[-18px] sm:mt-[-20px] transition-colors duration-300"
-                style={{
-                  background: step.num < currentStep ? "var(--accent-dim)" : "var(--border)",
-                }}
+              <span
+                className="flex-1 h-0.5 mx-3 rounded-full transition-colors duration-500"
+                style={{ background: done ? "var(--accent)" : "var(--border)" }}
               />
             )}
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

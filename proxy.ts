@@ -8,12 +8,16 @@ const AUTH_DOMAIN = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
 // protected ones. See dynamic import below.
 const SESSION_COOKIE = "session";
 
-function buildCsp(nonce: string): string {
+// Statically rendered marketing pages: no per-request nonce, so the CDN can cache them.
+// They render no user content, so 'unsafe-inline' scripts (Next's bootstrap) are acceptable here.
+const PUBLIC_PATHS = ["/", "/privacy", "/terms", "/chat-with-pdf", "/rag-pipeline-builder"];
+
+function buildCsp(nonce: string, isPublic: boolean): string {
   // style-src needs 'unsafe-inline': the UI is built entirely on inline style={{}} objects,
   // and CSP has no nonce mechanism for style attributes (only for <style> elements).
   return [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    isPublic ? `script-src 'self' 'unsafe-inline'` : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: https://lh3.googleusercontent.com https://avatars.githubusercontent.com`,
     `font-src 'self'`,
@@ -29,7 +33,8 @@ function buildCsp(nonce: string): string {
 
 export async function proxy(request: NextRequest) {
   const nonce = randomUUID();
-  const csp = buildCsp(nonce);
+  const isPublic = PUBLIC_PATHS.includes(request.nextUrl.pathname);
+  const csp = buildCsp(nonce, isPublic);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);

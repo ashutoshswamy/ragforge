@@ -1,42 +1,44 @@
-"use client";
-
 import { Zap } from "lucide-react";
+import Link from "next/link";
 
-interface LogoProps {
+const SIZES = { sm: [32, 20], md: [44, 28], lg: [64, 40] } as const;
+
+export default function Logo({
+  className = "",
+  size = "md",
+}: {
   className?: string;
-  size?: "sm" | "md" | "lg";
-  shape?: "hexagon" | "square";
+  size?: keyof typeof SIZES;
+}) {
+  const [box, icon] = SIZES[size];
+  return (
+    <span
+      className={`inline-flex items-center justify-center shrink-0 ${className}`}
+      style={{
+        width: box,
+        height: box,
+        borderRadius: box * 0.32,
+        background: "var(--accent)",
+        color: "var(--accent-ink)",
+        boxShadow: "0 8px 20px -8px var(--accent-glow-strong)",
+      }}
+      aria-hidden="true"
+    >
+      <Zap size={icon} strokeWidth={2.4} fill="currentColor" />
+    </span>
+  );
 }
 
-export default function Logo({ className = "", size = "md", shape = "hexagon" }: LogoProps) {
-  const sizes = {
-    sm: { container: "w-8 h-8", icon: 16 },
-    md: { container: "w-12 h-12", icon: 24 },
-    lg: { container: "w-16 h-16", icon: 32 },
-  };
-
-  const currentSize = sizes[size];
-
+export function Wordmark({ size = "sm", href = "/" }: { size?: keyof typeof SIZES; href?: string }) {
   return (
-    <div className={`relative flex items-center justify-center ${currentSize.container} ${className}`}>
-      {/* Glow */}
-      <div className="absolute inset-0 rounded-full blur-xl opacity-50" style={{ background: "var(--accent)" }} />
-
-      {/* Shape */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-        {shape === "hexagon" ? (
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_var(--accent-glow-strong)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 5L93.3 30V70L50 95L6.7 70V30L50 5Z" fill="var(--surface-elevated)" stroke="var(--accent)" strokeWidth="4" />
-          </svg>
-        ) : (
-          <div className="w-full h-full rounded-xl border-2 bg-[var(--surface-elevated)]" style={{ borderColor: "var(--accent)" }} />
-        )}
-      </div>
-
-      {/* Icon */}
-      <div className="relative z-10">
-        <Zap size={currentSize.icon} fill="var(--accent)" className="text-[var(--accent)] drop-shadow-[0_0_5px_var(--accent)]" />
-      </div>
-    </div>
+    <Link href={href} className="inline-flex items-center gap-2.5 min-h-11" aria-label="RAGForge home">
+      <Logo size={size} />
+      <span
+        className="text-xl font-bold"
+        style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.03em" }}
+      >
+        RAGForge
+      </span>
+    </Link>
   );
 }
