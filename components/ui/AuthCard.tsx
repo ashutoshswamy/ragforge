@@ -11,19 +11,21 @@ import { establishSession } from "@/lib/auth-context";
 import { recordAuthConsent } from "@/lib/consent-client";
 import { Wordmark } from "@/components/ui/Logo";
 import ThemeMenu from "@/components/ui/ThemeMenu";
-import ChatPreview from "@/components/ui/ChatPreview";
+import AuthStage from "@/components/ui/AuthStage";
 import { GoogleIcon, GithubIcon } from "@/components/ui/AuthIcons";
 
 const COPY = {
   "sign-in": {
     title: "Welcome back",
     sub: "Sign in to open your pipelines.",
+    stage: ["Pick up where you left off.", "Your documents, your settings, and every answer with its source."],
     swap: ["No account yet?", "Create one", "/sign-up"],
     done: "Signed in",
   },
   "sign-up": {
     title: "Create your account",
     sub: "Free to start. Bring your own Gemini key.",
+    stage: ["Your documents already have the answers.", "Ask in plain language. Get replies that point to the page they came from."],
     swap: ["Already have an account?", "Sign in", "/sign-in"],
     done: "Account ready",
   },
@@ -47,7 +49,7 @@ function ConsentBox({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="consent-row flex items-start gap-3 px-4 py-3.5" data-checked={checked}>
       <span className="relative mt-0.5 flex shrink-0">
         <input
           ref={inputRef}
@@ -66,7 +68,7 @@ function ConsentBox({
           style={{ color: "var(--accent-ink)" }}
         />
       </span>
-      <label htmlFor={id} className="text-sm cursor-pointer" style={{ color: "var(--text)" }}>
+      <label htmlFor={id} className="min-w-0 text-sm cursor-pointer leading-snug" style={{ color: "var(--text)" }}>
         {children}
       </label>
     </div>
@@ -108,20 +110,29 @@ export default function AuthCard({ mode }: { mode: keyof typeof COPY }) {
     }
   };
 
+  const gated = !ready;
+  const providers = [
+    { name: "google", Icon: GoogleIcon, label: "Continue with Google", make: () => new GoogleAuthProvider() },
+    { name: "github", Icon: GithubIcon, label: "Continue with GitHub", make: () => new GithubAuthProvider() },
+  ] as const;
+
   return (
-    <div className="min-h-dvh grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      {/* Form */}
+    <div className="min-h-dvh grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <main className="flex flex-col wash">
-        <div className="flex items-center justify-between px-6 pt-6 lg:px-16 xl:px-24">
+        <div className="flex items-center justify-between px-6 pt-6 lg:px-14 xl:px-20">
           <Wordmark />
           <ThemeMenu />
         </div>
-        <div className="flex-1 flex items-center px-6 py-12 lg:px-16 xl:px-24">
-          <div className="rise w-full max-w-sm">
+
+        <div className="flex-1 flex items-center px-6 py-12 lg:px-14 xl:px-20">
+          <div className="rise w-full max-w-[26rem]">
             <h1 className="text-4xl sm:text-5xl">{copy.title}</h1>
             <p className="mt-3 text-base" style={{ color: "var(--text-muted)" }}>{copy.sub}</p>
 
-            <fieldset className="mt-10 flex flex-col gap-4" aria-describedby={showError && !ready ? "consent-error" : undefined}>
+            <fieldset
+              className="consent mt-10"
+              aria-describedby={showError && !ready ? "consent-error" : undefined}
+            >
               <legend className="sr-only">Before you continue</legend>
               <ConsentBox
                 id="consent-age"
@@ -149,32 +160,27 @@ export default function AuthCard({ mode }: { mode: keyof typeof COPY }) {
                 </Link>
                 .
               </ConsentBox>
-              {showError && !ready && (
-                <p id="consent-error" role="alert" className="text-sm font-medium" style={{ color: "var(--error)" }}>
-                  Tick both boxes to continue.
-                </p>
-              )}
             </fieldset>
+            {showError && !ready && (
+              <p id="consent-error" role="alert" className="mt-3 text-sm font-medium" style={{ color: "var(--error)" }}>
+                Tick both boxes to continue.
+              </p>
+            )}
 
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => go("google", new GoogleAuthProvider())}
-                disabled={loading !== null}
-                className="btn btn-ghost w-full"
-              >
-                {loading === "google" ? <span className="spinner" /> : <GoogleIcon />}
-                Continue with Google
-              </button>
-              <button
-                type="button"
-                onClick={() => go("github", new GithubAuthProvider())}
-                disabled={loading !== null}
-                className="btn btn-ghost w-full"
-              >
-                {loading === "github" ? <span className="spinner" /> : <GithubIcon />}
-                Continue with GitHub
-              </button>
+            <div className="mt-5 flex flex-col gap-3">
+              {providers.map(({ name, Icon, label, make }) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => go(name, make())}
+                  disabled={loading !== null}
+                  aria-disabled={gated || undefined}
+                  className="btn btn-ghost w-full h-12 gate"
+                >
+                  {loading === name ? <span className="spinner" /> : <Icon />}
+                  {label}
+                </button>
+              ))}
             </div>
 
             <p className="mt-8 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -187,21 +193,7 @@ export default function AuthCard({ mode }: { mode: keyof typeof COPY }) {
         </div>
       </main>
 
-      {/* Stage: the product answering with a citation, shown with the real chat components */}
-      <aside
-        className="hidden lg:flex flex-col justify-center gap-10 p-12 xl:p-16 overflow-hidden"
-        style={{ background: "var(--surface-elevated)", borderLeft: "1px solid var(--border)" }}
-      >
-        <div className="rise max-w-md" style={{ ["--d" as string]: "150ms" }}>
-          <p className="text-4xl xl:text-5xl font-bold" style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.03em", lineHeight: 1.05, textWrap: "balance" }}>
-            Your documents already have the answers.
-          </p>
-          <p className="mt-5 text-lg" style={{ color: "var(--text-muted)" }}>
-            Ask in plain language. Get replies that point to the page they came from.
-          </p>
-        </div>
-        <ChatPreview />
-      </aside>
+      <AuthStage title={copy.stage[0]} sub={copy.stage[1]} />
     </div>
   );
 }

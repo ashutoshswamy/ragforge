@@ -17,7 +17,9 @@ function buildCsp(nonce: string, isPublic: boolean): string {
   // and CSP has no nonce mechanism for style attributes (only for <style> elements).
   return [
     `default-src 'self'`,
-    isPublic ? `script-src 'self' 'unsafe-inline'` : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    // React dev mode rebuilds callstacks with eval(); never allowed in production.
+    (isPublic ? `script-src 'self' 'unsafe-inline'` : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`) +
+      (process.env.NODE_ENV === "development" ? ` 'unsafe-eval'` : ""),
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: https://lh3.googleusercontent.com https://avatars.githubusercontent.com`,
     `font-src 'self'`,

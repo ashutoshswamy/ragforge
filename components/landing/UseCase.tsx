@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteHeader from "@/components/ui/SiteHeader";
+import SiteFooter from "@/components/ui/SiteFooter";
 
 export default function UseCase({ h1, intro, steps, why }: { h1: string; intro: string; steps: string[]; why: string }) {
   return (
@@ -17,6 +18,7 @@ export default function UseCase({ h1, intro, steps, why }: { h1: string; intro: 
         <Link href="/sign-up" className="btn mt-10 inline-flex">Start building — free</Link>
         <p className="mt-8 text-sm"><Link href="/" className="navlink">Back to RAGForge</Link></p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

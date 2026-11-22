@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/ui/SiteHeader";
+import SiteFooter from "@/components/ui/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -157,17 +158,7 @@ export default function PrivacyPolicy() {
       </main>
 
       {/* Footer */}
-      <footer
-        className="flex items-center justify-center px-5 sm:px-8 py-5"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        <span
-          className="text-sm"
-          style={{ color: "var(--text-dim)", fontFamily: "var(--font-body)" }}
-        >
-          &copy; {new Date().getFullYear()} RAGForge
-        </span>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
